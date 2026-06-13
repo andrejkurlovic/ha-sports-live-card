@@ -332,6 +332,6 @@ customElements.define("sports-live-lineup", CalcioLiveLineupCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'sports-live-lineup',
-  name: 'Calcio Live Lineup Card',
-  description: 'Mostra le formazioni di entrambe le squadre della prossima/attuale partita',
+  name: 'Sports Live Lineup',
+  description: 'Starting lineups for the next or current match.',
 });

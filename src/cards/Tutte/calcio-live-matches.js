@@ -738,6 +738,6 @@ customElements.define("sports-live-matches", CalcioLiveTodayMatchesCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'sports-live-matches',
-  name: 'Calcio Live Matches Card',
-  description: 'Mostra le partite della settimana o del tuo Team',
+  name: 'Sports Live Matches',
+  description: 'Match list for any sport: soccer, rugby, NFL. Supports competition and team mode.',
 });

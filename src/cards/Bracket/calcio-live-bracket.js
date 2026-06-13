@@ -914,6 +914,6 @@ customElements.define("sports-live-bracket", CalcioLiveBracketCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'sports-live-bracket',
-  name: 'Calcio Live Bracket Card',
-  description: 'Tabellone della fase a eliminazione diretta (Champions, Europa, Coppe)',
+  name: 'Sports Live Bracket',
+  description: 'Knockout bracket for cup competitions.',
 });

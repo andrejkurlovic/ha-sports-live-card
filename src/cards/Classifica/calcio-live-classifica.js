@@ -963,6 +963,6 @@ customElements.define("sports-live-classifica", CalcioLiveStandingsCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'sports-live-classifica',
-  name: 'Calcio Live Classifica Card',
-  description: 'Mostra la classifica del campionato o coppe',
+  name: 'Sports Live Standings',
+  description: 'League standings table for any sport: soccer, rugby, NFL.',
 });

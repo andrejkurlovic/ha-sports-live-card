@@ -1271,6 +1271,6 @@ customElements.define("sports-live-team", CalcioLiveTeamNextCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'sports-live-team',
-  name: 'Calcio Live team Card',
-  description: 'Mostra la prossima partita / partita in corso del tuo Team',
+  name: 'Sports Live Team',
+  description: 'Next match and live score for a tracked team.',
 });
