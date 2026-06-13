@@ -12,3 +12,5 @@ import "./cards/Timeline/calcio-live-timeline.js";
 import "./cards/Timeline/calcio-live-timeline-editor.js";
 import "./cards/Bracket/calcio-live-bracket.js";
 import "./cards/Bracket/calcio-live-bracket-editor.js";
+import "./cards/Game/sports-live-game-card.js";
+import "./cards/Game/sports-live-game-editor.js";
