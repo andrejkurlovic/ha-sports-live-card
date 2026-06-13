@@ -51,10 +51,18 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this._subscribeToEvents();
+    this._clockTick = setInterval(() => {
+      const stateObj = this.hass?.states?.[this._config?.entity];
+      const matches = stateObj?.attributes?.matches || [];
+      if (matches.some(m => m.state === 'in' && m.clock && m.clock !== 'N/A')) {
+        this.requestUpdate();
+      }
+    }, 1000);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    if (this._clockTick) { clearInterval(this._clockTick); this._clockTick = null; }
 
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
       this._eventSubscriptions.forEach(unsub => {
@@ -156,8 +164,29 @@ class CalcioLiveTodayMatchesCard extends LitElement {
     return new Date(year, month - 1, day, hours, minutes);
   }
 
+  _advanceClock(storedClock, lastUpdated) {
+    const parts = storedClock.split(':');
+    if (parts.length !== 2) return storedClock;
+    const base = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    if (isNaN(base)) return storedClock;
+    const elapsed = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
+    if (elapsed < 0 || elapsed > 300) return storedClock;
+    const current = base + elapsed;
+    const mm = Math.floor(current / 60);
+    const ss = current % 60;
+    return `${mm}:${ss.toString().padStart(2, '0')}`;
+  }
+
   _matchTimeLabel(match) {
-    if (match.state === 'in') return match.clock && match.clock !== 'N/A' ? match.clock : 'LIVE';
+    if (match.state === 'in') {
+      const clk = match.clock && match.clock !== 'N/A' ? match.clock : '';
+      if (clk) {
+        const stateObj = this.hass?.states?.[this._config?.entity];
+        const lastUpdated = stateObj?.last_updated;
+        return lastUpdated ? this._advanceClock(clk, lastUpdated) : clk;
+      }
+      return 'LIVE';
+    }
     if (match.state === 'post') return 'FT';
     if (match.date) {
       const parts = match.date.split(' ');

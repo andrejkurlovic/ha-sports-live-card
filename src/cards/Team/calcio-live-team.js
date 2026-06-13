@@ -57,10 +57,18 @@ class CalcioLiveTeamNextCard extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this._subscribeToEvents();
+    this._clockTick = setInterval(() => {
+      const stateObj = this.hass?.states?.[this._config?.entity];
+      const match = stateObj?.attributes?.matches?.[0];
+      if (match?.state === 'in' && match?.clock && match.clock !== 'N/A') {
+        this.requestUpdate();
+      }
+    }, 1000);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    if (this._clockTick) { clearInterval(this._clockTick); this._clockTick = null; }
 
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
       this._eventSubscriptions.forEach(unsub => {
@@ -276,12 +284,28 @@ class CalcioLiveTeamNextCard extends LitElement {
     return html`<span class="status-badge scheduled">${match.date || this._t('status.scheduled')}</span>`;
   }
 
+  _advanceClock(storedClock, lastUpdated) {
+    const parts = storedClock.split(':');
+    if (parts.length !== 2) return storedClock;
+    const base = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    if (isNaN(base)) return storedClock;
+    const elapsed = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
+    if (elapsed < 0 || elapsed > 300) return storedClock;
+    const current = base + elapsed;
+    const mm = Math.floor(current / 60);
+    const ss = current % 60;
+    return `${mm}:${ss.toString().padStart(2, '0')}`;
+  }
+
   _renderClock(match) {
     const state = match.state;
     if (state === 'in') {
-      const detail = match.status_detail && match.status_detail !== 'N/A' ? match.status_detail : '';
+      const stateObj = this.hass?.states?.[this._config?.entity];
+      const lastUpdated = stateObj?.last_updated;
       const clk = match.clock && match.clock !== 'N/A' ? match.clock : '';
-      const txt = clk || detail || match.status || '';
+      const estimated = clk && lastUpdated ? this._advanceClock(clk, lastUpdated) : clk;
+      const detail = match.status_detail && match.status_detail !== 'N/A' ? match.status_detail : '';
+      const txt = estimated || detail || match.status || '';
       return html`<div class="clock"><span class="dot"></span>${txt}</div>`;
     }
     if (state === 'post') {
