@@ -228,19 +228,20 @@ class CalcioLiveTeamNextCard extends LitElement {
 
     details.forEach(event => {
       const raw = String(event || '');
-      if (raw.startsWith('Try')) {
+      const lo = raw.toLowerCase();
+      if (lo.startsWith('try')) {
         tries.push(this.formatMatchEvent(raw));
-      } else if (raw.startsWith('Conversion')) {
+      } else if (lo.startsWith('conversion')) {
         conversions.push(this.formatMatchEvent(raw));
-      } else if (raw.startsWith('Penalty Goal') || raw.startsWith('Penalty - Scored')) {
+      } else if (lo.startsWith('penalty goal') || lo.startsWith('penalty - scored')) {
         penaltyGoals.push(this.formatMatchEvent(raw));
-      } else if (raw.startsWith('Drop Goal')) {
+      } else if (lo.startsWith('drop goal')) {
         dropGoals.push(this.formatMatchEvent(raw));
-      } else if (raw.includes('Goal')) {
+      } else if (lo.includes('goal')) {
         goals.push(this.formatMatchEvent(raw));
-      } else if (raw.includes('Yellow Card')) {
+      } else if (lo.includes('yellow card')) {
         yellowCards.push(this.formatMatchEvent(raw));
-      } else if (raw.includes('Red Card')) {
+      } else if (lo.includes('red card')) {
         redCards.push(this.formatMatchEvent(raw));
       }
     });

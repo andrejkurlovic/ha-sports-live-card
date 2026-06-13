@@ -128,6 +128,10 @@ const TRANSLATIONS = {
     'col.losses': 'L',
     'col.gd': '+/-',
     'col.points': 'Pts',
+    'col.gf': 'GF',
+    'col.ga': 'GA',
+    'team.form': 'Form',
+    'team.last5': 'Last 5',
 
     // Generic
     'generic.no_match': 'No match available',
@@ -260,6 +264,10 @@ const TRANSLATIONS = {
     'col.losses': 'V',
     'col.gd': '+/-',
     'col.points': 'Pnt',
+    'col.gf': 'VD',
+    'col.ga': 'TD',
+    'team.form': 'Vorm',
+    'team.last5': 'Laatste 5',
 
     'generic.no_match': 'Geen wedstrijd beschikbaar',
     'generic.matches_count': '{n} wedstrijden',
@@ -380,6 +388,10 @@ const TRANSLATIONS = {
     'col.losses': 'S',
     'col.gd': '+/-',
     'col.points': 'Pt',
+    'col.gf': 'GF',
+    'col.ga': 'GS',
+    'team.form': 'Forma',
+    'team.last5': 'Ultime 5',
 
     'generic.no_match': 'Nessuna partita disponibile',
     'generic.matches_count': '{n} partite',
@@ -497,6 +509,10 @@ const TRANSLATIONS = {
     'col.losses': 'P',
     'col.gd': '+/-',
     'col.points': 'Pts',
+    'col.gf': 'BP',
+    'col.ga': 'BC',
+    'team.form': 'Forme',
+    'team.last5': '5 derniers',
 
     'generic.no_match': 'Aucun match disponible',
     'generic.matches_count': '{n} matchs',
@@ -614,6 +630,10 @@ const TRANSLATIONS = {
     'col.losses': 'P',
     'col.gd': '+/-',
     'col.points': 'Pts',
+    'col.gf': 'GF',
+    'col.ga': 'GC',
+    'team.form': 'Forma',
+    'team.last5': 'Últimos 5',
 
     'generic.no_match': 'Ningún partido disponible',
     'generic.matches_count': '{n} partidos',

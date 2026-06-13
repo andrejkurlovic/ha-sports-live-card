@@ -121,6 +121,8 @@ class CalcioLiveStandingsCard extends LitElement {
       maxTeamsVisible: { type: Number },
       hideHeader: { type: Boolean },
       selectedGroup: { type: String },
+      showPopup: { type: Boolean },
+      activeTeam: { type: Object },
       _eventSubscriptions: { type: Array },
       _toastMessage: { type: String },
       _toastVisible: { type: Boolean },
@@ -142,6 +144,8 @@ class CalcioLiveStandingsCard extends LitElement {
     this._toastVisible = false;
     this._toastVariant = 'goal';
     this._toastTimer = null;
+    this.showPopup = false;
+    this.activeTeam = null;
   }
 
   _t(key, vars) {
@@ -226,6 +230,94 @@ class CalcioLiveStandingsCard extends LitElement {
       this.requestUpdate();
     }, 4000);
     this.requestUpdate();
+  }
+
+  showTeamDetails(team) {
+    this.activeTeam = team;
+    this.showPopup = true;
+  }
+
+  updated(changedProperties) {
+    if (changedProperties.has('showPopup') || changedProperties.has('activeTeam')) {
+      this._renderTeamPopupToBody();
+    }
+  }
+
+  _renderTeamPopupToBody() {
+    if (!this.showPopup || !this.activeTeam) {
+      const existing = document.getElementById('sports-live-standings-popup');
+      if (existing) existing.remove();
+      return;
+    }
+    let popup = document.getElementById('sports-live-standings-popup');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'sports-live-standings-popup';
+      popup.style.cssText = `
+        position:fixed; inset:0;
+        display:flex; justify-content:center; align-items:center;
+        z-index:999999;
+        background:rgba(0,0,0,0.7);
+        backdrop-filter:blur(8px);
+        overflow:auto;
+      `;
+      popup.addEventListener('click', (e) => { if (e.target === popup) this.showPopup = false; });
+      document.body.appendChild(popup);
+    }
+
+    const t = this.activeTeam;
+    const tx = (k) => this._t(k);
+    const num = (v) => { const n = parseInt(String(v ?? '').replace('+', ''), 10); return isNaN(n) ? null : n; };
+    const w = num(t.wins); const d = num(t.draws); const l = num(t.losses);
+    const played = (w !== null && d !== null && l !== null) ? w + d + l : null;
+    const gd = num(t.goal_difference);
+    const gdLabel = gd === null ? '—' : (gd > 0 ? `+${gd}` : `${gd}`);
+    const gdColor = gd === null ? '#94a3b8' : (gd > 0 ? '#10b981' : gd < 0 ? '#ef4444' : '#94a3b8');
+
+    const statBox = (label, val, color = '#f8fafc') =>
+      `<div style="background:rgba(255,255,255,0.04);padding:12px 8px;border-radius:12px;text-align:center;">
+        <div style="font-size:18px;font-weight:900;color:${color};font-variant-numeric:tabular-nums;">${val ?? '—'}</div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-top:3px;">${label}</div>
+      </div>`;
+
+    const formStr = String(t.form || '').replace(/[^WLDwld]/g, '').toUpperCase().slice(-5);
+    const pillColor = { W: '#10b981', L: '#ef4444', D: '#f59e0b' };
+    const formPills = formStr ? formStr.split('').map(c =>
+      `<div style="width:22px;height:22px;border-radius:6px;background:${pillColor[c] || '#475569'};color:white;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">${c}</div>`
+    ).join('') : '';
+
+    popup.innerHTML = `
+      <div style="background:#1a1f2e;padding:24px;border-radius:20px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+          ${t.team_logo ? `<img src="${t.team_logo}" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />` : ''}
+          <div>
+            <div style="font-size:20px;font-weight:900;letter-spacing:-0.02em;">${t.team_name}</div>
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px;">${tx('col.pos')} #${t.rank} · ${t.points ?? '—'} ${tx('col.points')}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.played'), played)}
+          ${statBox(tx('col.wins'), w, '#10b981')}
+          ${statBox(tx('col.draws'), d, '#f59e0b')}
+          ${statBox(tx('col.losses'), l, '#ef4444')}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.gf'), num(t.goals_for) ?? (num(t.points) !== null ? '—' : null))}
+          ${statBox(tx('col.ga'), num(t.goals_against) ?? null)}
+          ${statBox(tx('col.gd'), gdLabel, gdColor)}
+        </div>
+
+        ${formPills ? `
+        <div style="margin-bottom:18px;padding:14px;background:rgba(255,255,255,0.04);border-radius:12px;">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:8px;">${tx('team.form')} (${tx('team.last5')})</div>
+          <div style="display:flex;gap:6px;">${formPills}</div>
+        </div>` : ''}
+
+        <button id="standings-popup-close" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:4px;font-weight:800;width:100%;font-size:14px;">${tx('generic.close')}</button>
+      </div>`;
+
+    popup.querySelector('#standings-popup-close').addEventListener('click', () => { this.showPopup = false; });
   }
 
   getCardSize() { return 5; }
@@ -445,7 +537,8 @@ class CalcioLiveStandingsCard extends LitElement {
             const gdClass = gd === null ? '' : (gd > 0 ? 'gd-pos' : (gd < 0 ? 'gd-neg' : ''));
             const gdLabel = gd === null ? '-' : (gd > 0 ? `+${gd}` : `${gd}`);
             return html`
-              <tr class="${this._zoneClass(team.rank, total)}">
+              <tr class="${this._zoneClass(team.rank, total)} clickable-row"
+                  @click="${() => this.showTeamDetails(team)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
                   <img src="${team.team_logo}" alt="${team.team_name}" />
@@ -730,6 +823,13 @@ class CalcioLiveStandingsCard extends LitElement {
       }
       .standings-table tbody tr:hover {
         background: var(--cl-card-2);
+      }
+      .standings-table tbody tr.clickable-row {
+        cursor: pointer;
+      }
+      .standings-table tbody tr.clickable-row:hover {
+        background: var(--cl-card-2);
+        transform: none;
       }
       .standings-table tbody td {
         padding: 10px 4px;
