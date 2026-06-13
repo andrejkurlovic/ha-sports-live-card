@@ -355,9 +355,9 @@ class CalcioLiveTodayMatchesCard extends LitElement {
                       <span class="name ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${match.away_team}</span>
                       <span class="score ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${this._matchScore(match, 'away')}</span>
                     </div>
-                    ${broadcast && isUpcoming ? html`
+                    ${broadcast && (isUpcoming || isLive) ? html`
                       <div class="row-extras">
-                        <span class="tv-chip" title="Diretta TV">
+                        <span class="tv-chip" title="Watch on TV">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
                           ${broadcast}
                         </span>

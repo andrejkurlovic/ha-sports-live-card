@@ -683,9 +683,9 @@
                       <span class="name ${!0===n?"winner":!1===n?"loser":""}">${e.away_team}</span>
                       <span class="score ${!0===n?"winner":!1===n?"loser":""}">${this._matchScore(e,"away")}</span>
                     </div>
-                    ${o&&r?I`
+                    ${o&&(r||i)?I`
                       <div class="row-extras">
-                        <span class="tv-chip" title="Diretta TV">
+                        <span class="tv-chip" title="Watch on TV">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
                           ${o}
                         </span>
