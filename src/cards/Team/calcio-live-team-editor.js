@@ -149,6 +149,14 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
           ></ha-switch>
         </div>
         <div>
+          <label class="field-label">TV Broadcast Region</label>
+          <select data-config-value="broadcast_region" @change=${this._selectChanged}>
+            <option value="uk" ?selected=${(this._config.broadcast_region || 'uk') === 'uk'}>UK (default)</option>
+            <option value="us" ?selected=${this._config.broadcast_region === 'us'}>US</option>
+            <option value="both" ?selected=${this._config.broadcast_region === 'both'}>Both</option>
+          </select>
+        </div>
+        <div>
           <label class="field-label">Skin</label>
           <select data-config-value="skin" @change=${this._selectChanged}>
             <option value="dark" ?selected=${(this._config.skin || 'dark') === 'dark'}>Dark</option>

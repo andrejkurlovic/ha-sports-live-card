@@ -53,6 +53,10 @@ const TRANSLATIONS = {
     'event.shot': 'Shot',
     'event.penalty': 'Penalty',
     'event.free_kick': 'Free kick',
+    'event.try': 'Try',
+    'event.conversion': 'Conversion',
+    'event.penalty_goal': 'Penalty Goal',
+    'event.drop_goal': 'Drop Goal',
 
     // Form pills
     'form.W': 'W',
@@ -189,6 +193,10 @@ const TRANSLATIONS = {
     'event.shot': 'Schot',
     'event.penalty': 'Penalty',
     'event.free_kick': 'Vrije trap',
+    'event.try': 'Try',
+    'event.conversion': 'Conversie',
+    'event.penalty_goal': 'Strafschop Goal',
+    'event.drop_goal': 'Dropgoal',
 
     'form.W': 'W',
     'form.D': 'G',
@@ -309,6 +317,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Cartellino rosso',
     'event.substitution': 'Sostituzione',
     'event.var': 'VAR',
+    'event.try': 'Meta',
+    'event.conversion': 'Trasformazione',
+    'event.penalty_goal': 'Calcio Piazzato',
+    'event.drop_goal': 'Drop Goal',
 
     'form.W': 'V',
     'form.D': 'N',
@@ -423,6 +435,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Carton rouge',
     'event.substitution': 'Remplacement',
     'event.var': 'VAR',
+    'event.try': 'Essai',
+    'event.conversion': 'Transformation',
+    'event.penalty_goal': 'Pénalité',
+    'event.drop_goal': 'Drop',
 
     'form.W': 'V',
     'form.D': 'N',
@@ -536,6 +552,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Tarjeta roja',
     'event.substitution': 'Sustitución',
     'event.var': 'VAR',
+    'event.try': 'Ensayo',
+    'event.conversion': 'Conversión',
+    'event.penalty_goal': 'Gol de Penalti',
+    'event.drop_goal': 'Drop Goal',
 
     'form.W': 'V',
     'form.D': 'E',

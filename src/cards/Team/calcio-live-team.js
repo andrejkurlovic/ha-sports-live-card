@@ -224,11 +224,19 @@ class CalcioLiveTeamNextCard extends LitElement {
 
   separateEvents(details) {
     const goals = [], yellowCards = [], redCards = [];
+    const tries = [], conversions = [], penaltyGoals = [], dropGoals = [];
 
     details.forEach(event => {
       const raw = String(event || '');
-
-      if (raw.includes('Goal') || raw.includes('Penalty - Scored')) {
+      if (raw.startsWith('Try')) {
+        tries.push(this.formatMatchEvent(raw));
+      } else if (raw.startsWith('Conversion')) {
+        conversions.push(this.formatMatchEvent(raw));
+      } else if (raw.startsWith('Penalty Goal') || raw.startsWith('Penalty - Scored')) {
+        penaltyGoals.push(this.formatMatchEvent(raw));
+      } else if (raw.startsWith('Drop Goal')) {
+        dropGoals.push(this.formatMatchEvent(raw));
+      } else if (raw.includes('Goal')) {
         goals.push(this.formatMatchEvent(raw));
       } else if (raw.includes('Yellow Card')) {
         yellowCards.push(this.formatMatchEvent(raw));
@@ -237,7 +245,7 @@ class CalcioLiveTeamNextCard extends LitElement {
       }
     });
 
-    return { goals, yellowCards, redCards };
+    return { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals };
   }
 
   formatMatchEvent(event) {
@@ -248,6 +256,10 @@ class CalcioLiveTeamNextCard extends LitElement {
       .replace(/^Goal\s*-\s*/i, '')
       .replace(/^Yellow Card\s*-\s*/i, '')
       .replace(/^Red Card\s*-\s*/i, '')
+      .replace(/^Try\s*-\s*/i, '')
+      .replace(/^Conversion\s*-\s*/i, '')
+      .replace(/^Penalty Goal\s*-\s*/i, '')
+      .replace(/^Drop Goal\s*-\s*/i, '')
       .replace(/^Penalty - Scored\s*-\s*/i, `${tx('event.penalty')} - `)
       .replace(/^Header\s*-\s*/i, `${tx('event.header')} - `)
       .replace(/^Shot\s*-\s*/i, `${tx('event.shot')} - `)
@@ -273,6 +285,15 @@ class CalcioLiveTeamNextCard extends LitElement {
     return text;
   }
 
+  _getBroadcast(match) {
+    const region = this._config?.broadcast_region || 'uk';
+    const uk = match.broadcast_uk && match.broadcast_uk !== 'N/A' ? match.broadcast_uk : '';
+    const us = match.broadcast && match.broadcast !== 'N/A' && match.broadcast !== '' ? match.broadcast : '';
+    if (region === 'us') return us || uk;
+    if (region === 'both') return [uk, us].filter(Boolean).join(' / ') || '';
+    return uk || us;
+  }
+
   _renderStatusBadge(match) {
     const state = match.state;
     if (state === 'in') {
@@ -285,16 +306,21 @@ class CalcioLiveTeamNextCard extends LitElement {
   }
 
   _advanceClock(storedClock, lastUpdated) {
-    const parts = storedClock.split(':');
-    if (parts.length !== 2) return storedClock;
-    const base = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-    if (isNaN(base)) return storedClock;
     const elapsed = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
     if (elapsed < 0 || elapsed > 300) return storedClock;
-    const current = base + elapsed;
-    const mm = Math.floor(current / 60);
-    const ss = current % 60;
-    return `${mm}:${ss.toString().padStart(2, '0')}`;
+    if (storedClock.includes(':')) {
+      const parts = storedClock.split(':');
+      if (parts.length !== 2) return storedClock;
+      const base = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      if (isNaN(base)) return storedClock;
+      const current = base + elapsed;
+      return `${Math.floor(current / 60)}:${(current % 60).toString().padStart(2, '0')}`;
+    }
+    const rugbyMatch = storedClock.match(/^(\d+)'$/);
+    if (rugbyMatch) {
+      return `${parseInt(rugbyMatch[1], 10) + Math.floor(elapsed / 60)}'`;
+    }
+    return storedClock;
   }
 
   _renderClock(match) {
@@ -419,7 +445,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     const venue = match.venue && match.venue !== 'N/A' ? match.venue : '';
     const venueCity = match.venue_city && match.venue_city !== 'N/A' ? match.venue_city : '';
     const venueLabel = venue ? (venueCity ? `${venue}, ${venueCity}` : venue) : '—';
-    const broadcast = (match.broadcast && match.broadcast !== '' && match.broadcast !== 'N/A' ? match.broadcast : '') || match.broadcast_uk || '';
+    const broadcast = this._getBroadcast(match);
     const attendance = parseInt(match.attendance, 10);
     const hasAttendance = !isNaN(attendance) && attendance > 0;
 
@@ -580,7 +606,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     if (closeBtn) closeBtn.addEventListener('click', () => { this.showPopup = false; });
 
     const eventsContainer = popupContainer.querySelector('#team-events-container');
-    const { goals, yellowCards, redCards } = this.separateEvents(m.match_details || []);
+    const { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals } = this.separateEvents(m.match_details || []);
     const renderGroup = (title, items, color) => {
       if (!items.length) return '';
       return `<div style="margin-bottom:14px; padding:14px; background:${color.bg}; border-left:3px solid ${color.border}; border-radius:10px;">
@@ -592,6 +618,10 @@ class CalcioLiveTeamNextCard extends LitElement {
     eventsHTML += renderGroup(tx('event.goal'), goals, { bg: 'rgba(99,102,241,0.1)', border: '#6366f1' });
     eventsHTML += renderGroup(tx('event.yellow_card'), yellowCards, { bg: 'rgba(245,158,11,0.1)', border: '#f59e0b' });
     eventsHTML += renderGroup(tx('event.red_card'), redCards, { bg: 'rgba(239,68,68,0.1)', border: '#ef4444' });
+    eventsHTML += renderGroup(tx('event.try'), tries, { bg: 'rgba(16,185,129,0.1)', border: '#10b981' });
+    eventsHTML += renderGroup(tx('event.conversion'), conversions, { bg: 'rgba(16,185,129,0.07)', border: '#34d399' });
+    eventsHTML += renderGroup(tx('event.penalty_goal'), penaltyGoals, { bg: 'rgba(251,191,36,0.1)', border: '#fbbf24' });
+    eventsHTML += renderGroup(tx('event.drop_goal'), dropGoals, { bg: 'rgba(99,102,241,0.07)', border: '#818cf8' });
 
     // Lineup (se disponibile dal sensor team_match arricchito con summary)
     const lineupHome = m.lineup_home || [];
