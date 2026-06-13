@@ -336,7 +336,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
               const recent = this._recentEventMatches.get(matchKey);
               const homeWinner = this._isWinner(match, 'home');
               const awayWinner = this._isWinner(match, 'away');
-              const broadcast = match.broadcast && match.broadcast !== '' && match.broadcast !== 'N/A' ? match.broadcast : '';
+              const broadcast = (match.broadcast && match.broadcast !== '' && match.broadcast !== 'N/A' ? match.broadcast : '') || match.broadcast_uk || '';
               const isUpcoming = match.state === 'pre';
               return html`
                 <div class="match-row ${isLive ? 'live' : ''} ${recent === 'goal' ? 'goal-pulse' : ''} ${recent === 'card' ? 'card-pulse' : ''}"

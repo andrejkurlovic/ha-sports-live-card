@@ -666,7 +666,7 @@
         <div class="scroll-content" style="max-height: ${c}px;">
           ${r.map((e=>I`
             <div class="day-divider ${e.key.includes("Oggi")?"today":""}">${e.key}</div>
-            ${e.matches.map((e=>{const t=`${e.home_team}_${e.away_team}`,i="in"===e.state,a=this._recentEventMatches.get(t),s=this._isWinner(e,"home"),n=this._isWinner(e,"away"),o=e.broadcast&&""!==e.broadcast&&"N/A"!==e.broadcast?e.broadcast:"",r="pre"===e.state;return I`
+            ${e.matches.map((e=>{const t=`${e.home_team}_${e.away_team}`,i="in"===e.state,a=this._recentEventMatches.get(t),s=this._isWinner(e,"home"),n=this._isWinner(e,"away"),o=(e.broadcast&&""!==e.broadcast&&"N/A"!==e.broadcast?e.broadcast:"")||e.broadcast_uk||"",r="pre"===e.state;return I`
                 <div class="match-row ${i?"live":""} ${"goal"===a?"goal-pulse":""} ${"card"===a?"card-pulse":""}"
                      @click="${()=>this.showDetails(e)}">
                   <div class="match-time ${i?"live-time":""} ${"post"===e.state?"ft":""}">
@@ -1174,7 +1174,7 @@
             </div>
           `}))}
       </div>
-    `}render(){if(!this.hass||!this._config)return I``;const e=this._config.entity,t=this.hass.states[e];if(!t)return I`<ha-card class="empty">${this._t("generic.unknown_entity")}: ${e}</ha-card>`;if(!t.attributes.matches||0===t.attributes.matches.length)return I`<ha-card class="empty">${this._t("generic.no_match")}</ha-card>`;const i=t.attributes.matches[0],a="in"===i.state,s="post"===i.state,n=a||s,o=i.league_name&&"N/A"!==i.league_name?i.league_name:i.season_info&&"N/A"!==i.season_info&&this._shouldShowPhase(i.season_info)?this._translatePhase(i.season_info):"",r=i.venue&&"N/A"!==i.venue?i.venue:"",l=i.venue_city&&"N/A"!==i.venue_city?i.venue_city:"",c=r?l?`${r}, ${l}`:r:"—",d=i.broadcast&&""!==i.broadcast&&"N/A"!==i.broadcast?i.broadcast:"",p=parseInt(i.attendance,10),h=!isNaN(p)&&p>0;return I`
+    `}render(){if(!this.hass||!this._config)return I``;const e=this._config.entity,t=this.hass.states[e];if(!t)return I`<ha-card class="empty">${this._t("generic.unknown_entity")}: ${e}</ha-card>`;if(!t.attributes.matches||0===t.attributes.matches.length)return I`<ha-card class="empty">${this._t("generic.no_match")}</ha-card>`;const i=t.attributes.matches[0],a="in"===i.state,s="post"===i.state,n=a||s,o=i.league_name&&"N/A"!==i.league_name?i.league_name:i.season_info&&"N/A"!==i.season_info&&this._shouldShowPhase(i.season_info)?this._translatePhase(i.season_info):"",r=i.venue&&"N/A"!==i.venue?i.venue:"",l=i.venue_city&&"N/A"!==i.venue_city?i.venue_city:"",c=r?l?`${r}, ${l}`:r:"—",d=(i.broadcast&&""!==i.broadcast&&"N/A"!==i.broadcast?i.broadcast:"")||i.broadcast_uk||"",p=parseInt(i.attendance,10),h=!isNaN(p)&&p>0;return I`
       <ha-card class="${a?"live":""}">
         <div class="bg-logos">
           <div class="bg-logo home"><img src="${i.home_logo}" alt="" loading="lazy"></div>

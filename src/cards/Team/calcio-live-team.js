@@ -395,7 +395,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     const venue = match.venue && match.venue !== 'N/A' ? match.venue : '';
     const venueCity = match.venue_city && match.venue_city !== 'N/A' ? match.venue_city : '';
     const venueLabel = venue ? (venueCity ? `${venue}, ${venueCity}` : venue) : '—';
-    const broadcast = match.broadcast && match.broadcast !== '' && match.broadcast !== 'N/A' ? match.broadcast : '';
+    const broadcast = (match.broadcast && match.broadcast !== '' && match.broadcast !== 'N/A' ? match.broadcast : '') || match.broadcast_uk || '';
     const attendance = parseInt(match.attendance, 10);
     const hasAttendance = !isNaN(attendance) && attendance > 0;
 
