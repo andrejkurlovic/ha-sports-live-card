@@ -232,7 +232,7 @@ class CalcioLiveStandingsCard extends LitElement {
   static getConfigElement() { return document.createElement("sports-live-classifica-editor"); }
   static getStubConfig() {
     return {
-      entity: "sensor.calcio_live",
+      entity: "",
       max_teams_visible: 10,
       hide_header: false,
       selected_group: '',

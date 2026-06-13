@@ -138,7 +138,11 @@ class CalcioLiveClassificaCardEditor extends LitElement {
   _fetchEntities() {
     if (!this.hass) return;
     this.entities = Object.keys(this.hass.states)
-      .filter((entityId) => entityId.startsWith('sensor.sports_live_standings') || entityId.startsWith('sensor.calciolive_classifica'))
+      .filter(id => {
+        if (!id.startsWith('sensor.')) return false;
+        const attrs = this.hass.states[id]?.attributes;
+        return attrs?.sport !== undefined && Array.isArray(attrs?.standings_groups);
+      })
       .sort();
   }
 

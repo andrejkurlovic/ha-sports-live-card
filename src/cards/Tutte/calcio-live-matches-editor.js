@@ -129,7 +129,11 @@ class CalcioLiveTodayMatchesEditor extends LitElement {
   _fetchEntities() {
     if (!this.hass) return;
     this.entities = Object.keys(this.hass.states)
-      .filter((entityId) => entityId.startsWith('sensor.sports_live_matches') || entityId.startsWith('sensor.sports_live_schedule') || entityId.startsWith('sensor.sports_live_today') || entityId.startsWith('sensor.calciolive_all'))
+      .filter(id => {
+        if (!id.startsWith('sensor.')) return false;
+        const attrs = this.hass.states[id]?.attributes;
+        return attrs?.sport !== undefined && Array.isArray(attrs?.matches);
+      })
       .sort();
   }
 

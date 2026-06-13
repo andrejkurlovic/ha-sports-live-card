@@ -78,7 +78,11 @@ class CalcioLiveLineupEditor extends LitElement {
   _fetchEntities() {
     if (!this.hass) return;
     this.entities = Object.keys(this.hass.states)
-      .filter(id => id.startsWith('sensor.sports_live_next') || id.startsWith('sensor.calciolive_next'))
+      .filter(id => {
+        if (!id.startsWith('sensor.')) return false;
+        const attrs = this.hass.states[id]?.attributes;
+        return attrs?.sport !== undefined && Array.isArray(attrs?.matches);
+      })
       .sort();
   }
 

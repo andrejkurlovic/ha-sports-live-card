@@ -214,7 +214,7 @@ class CalcioLiveTeamNextCard extends LitElement {
 
   getCardSize() { return 4; }
   static getConfigElement() { return document.createElement("sports-live-team-editor"); }
-  static getStubConfig() { return { entity: "sensor.calcio_live", show_event_toasts: false }; }
+  static getStubConfig() { return { entity: "", show_event_toasts: false }; }
 
   showDetails(match) {
     this.activeMatch = match;

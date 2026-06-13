@@ -146,7 +146,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   static getConfigElement() { return document.createElement("sports-live-matches-editor"); }
   static getStubConfig() {
     return {
-      entity: "sensor.calcio_live",
+      entity: "",
       max_events_visible: 5,
       max_events_total: 50,
       hide_past_days: 0,
