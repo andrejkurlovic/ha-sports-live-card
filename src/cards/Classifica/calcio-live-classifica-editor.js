@@ -237,4 +237,4 @@ class CalcioLiveClassificaCardEditor extends LitElement {
   }
 }
 
-customElements.define('calcio-live-classifica-editor', CalcioLiveClassificaCardEditor);
+customElements.define('sports-live-classifica-editor', CalcioLiveClassificaCardEditor);

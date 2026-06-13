@@ -205,7 +205,7 @@ class CalcioLiveTeamNextCard extends LitElement {
   }
 
   getCardSize() { return 4; }
-  static getConfigElement() { return document.createElement("calcio-live-team-editor"); }
+  static getConfigElement() { return document.createElement("sports-live-team-editor"); }
   static getStubConfig() { return { entity: "sensor.calcio_live", show_event_toasts: false }; }
 
   showDetails(match) {
@@ -495,15 +495,15 @@ class CalcioLiveTeamNextCard extends LitElement {
 
   renderPopupToBody() {
     if (!this.showPopup || !this.activeMatch) {
-      const existingPopup = document.getElementById('calcio-live-team-popup');
+      const existingPopup = document.getElementById('sports-live-team-popup');
       if (existingPopup) existingPopup.remove();
       return;
     }
 
-    let popupContainer = document.getElementById('calcio-live-team-popup');
+    let popupContainer = document.getElementById('sports-live-team-popup');
     if (!popupContainer) {
       popupContainer = document.createElement('div');
-      popupContainer.id = 'calcio-live-team-popup';
+      popupContainer.id = 'sports-live-team-popup';
       popupContainer.style.cssText = `
         position: fixed; inset: 0;
         display: flex; justify-content: center; align-items: center;
@@ -1266,11 +1266,11 @@ class CalcioLiveTeamNextCard extends LitElement {
   }
 }
 
-customElements.define("calcio-live-team", CalcioLiveTeamNextCard);
+customElements.define("sports-live-team", CalcioLiveTeamNextCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'calcio-live-team',
+  type: 'sports-live-team',
   name: 'Calcio Live team Card',
   description: 'Mostra la prossima partita / partita in corso del tuo Team',
 });

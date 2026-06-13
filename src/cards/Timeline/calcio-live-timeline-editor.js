@@ -138,4 +138,4 @@ class CalcioLiveTimelineEditor extends LitElement {
   }
 }
 
-customElements.define('calcio-live-timeline-editor', CalcioLiveTimelineEditor);
+customElements.define('sports-live-timeline-editor', CalcioLiveTimelineEditor);

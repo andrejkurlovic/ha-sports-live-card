@@ -135,7 +135,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   }
 
   getCardSize() { return 4; }
-  static getConfigElement() { return document.createElement("calcio-live-matches-editor"); }
+  static getConfigElement() { return document.createElement("sports-live-matches-editor"); }
   static getStubConfig() {
     return {
       entity: "sensor.calcio_live",
@@ -382,14 +382,14 @@ class CalcioLiveTodayMatchesCard extends LitElement {
 
   renderPopupToBody() {
     if (!this.showPopup || !this.activeMatch) {
-      const existingPopup = document.getElementById('calcio-live-matches-popup');
+      const existingPopup = document.getElementById('sports-live-matches-popup');
       if (existingPopup) existingPopup.remove();
       return;
     }
-    let popupContainer = document.getElementById('calcio-live-matches-popup');
+    let popupContainer = document.getElementById('sports-live-matches-popup');
     if (!popupContainer) {
       popupContainer = document.createElement('div');
-      popupContainer.id = 'calcio-live-matches-popup';
+      popupContainer.id = 'sports-live-matches-popup';
       popupContainer.style.cssText = `
         position: fixed; inset: 0;
         display: flex; justify-content: center; align-items: center;
@@ -733,11 +733,11 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   }
 }
 
-customElements.define("calcio-live-matches", CalcioLiveTodayMatchesCard);
+customElements.define("sports-live-matches", CalcioLiveTodayMatchesCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'calcio-live-matches',
+  type: 'sports-live-matches',
   name: 'Calcio Live Matches Card',
   description: 'Mostra le partite della settimana o del tuo Team',
 });

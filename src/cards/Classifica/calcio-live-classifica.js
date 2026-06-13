@@ -229,7 +229,7 @@ class CalcioLiveStandingsCard extends LitElement {
   }
 
   getCardSize() { return 5; }
-  static getConfigElement() { return document.createElement("calcio-live-classifica-editor"); }
+  static getConfigElement() { return document.createElement("sports-live-classifica-editor"); }
   static getStubConfig() {
     return {
       entity: "sensor.calcio_live",
@@ -958,11 +958,11 @@ class CalcioLiveStandingsCard extends LitElement {
   }
 }
 
-customElements.define("calcio-live-classifica", CalcioLiveStandingsCard);
+customElements.define("sports-live-classifica", CalcioLiveStandingsCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'calcio-live-classifica',
+  type: 'sports-live-classifica',
   name: 'Calcio Live Classifica Card',
   description: 'Mostra la classifica del campionato o coppe',
 });

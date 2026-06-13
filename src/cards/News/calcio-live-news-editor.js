@@ -157,4 +157,4 @@ class CalcioLiveNewsEditor extends LitElement {
   }
 }
 
-customElements.define('calcio-live-news-editor', CalcioLiveNewsEditor);
+customElements.define('sports-live-news-editor', CalcioLiveNewsEditor);

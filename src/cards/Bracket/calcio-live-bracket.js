@@ -49,7 +49,7 @@ class CalcioLiveBracketCard extends LitElement {
   }
 
   getCardSize() { return 6; }
-  static getConfigElement() { return document.createElement("calcio-live-bracket-editor"); }
+  static getConfigElement() { return document.createElement("sports-live-bracket-editor"); }
   static getStubConfig() {
     return { entity: "sensor.calciolive_bracket", hide_header: false, compact: false, style: 'list' };
   }
@@ -909,11 +909,11 @@ class CalcioLiveBracketCard extends LitElement {
   }
 }
 
-customElements.define("calcio-live-bracket", CalcioLiveBracketCard);
+customElements.define("sports-live-bracket", CalcioLiveBracketCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'calcio-live-bracket',
+  type: 'sports-live-bracket',
   name: 'Calcio Live Bracket Card',
   description: 'Tabellone della fase a eliminazione diretta (Champions, Europa, Coppe)',
 });

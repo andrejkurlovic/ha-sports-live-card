@@ -130,4 +130,4 @@ class CalcioLiveLineupEditor extends LitElement {
   }
 }
 
-customElements.define('calcio-live-lineup-editor', CalcioLiveLineupEditor);
+customElements.define('sports-live-lineup-editor', CalcioLiveLineupEditor);

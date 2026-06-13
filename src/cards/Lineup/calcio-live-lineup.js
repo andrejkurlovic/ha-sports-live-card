@@ -22,7 +22,7 @@ class CalcioLiveLineupCard extends LitElement {
   }
 
   getCardSize() { return 6; }
-  static getConfigElement() { return document.createElement("calcio-live-lineup-editor"); }
+  static getConfigElement() { return document.createElement("sports-live-lineup-editor"); }
   static getStubConfig() {
     return { entity: "sensor.calciolive_next", hide_header: false };
   }
@@ -327,11 +327,11 @@ class CalcioLiveLineupCard extends LitElement {
   }
 }
 
-customElements.define("calcio-live-lineup", CalcioLiveLineupCard);
+customElements.define("sports-live-lineup", CalcioLiveLineupCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'calcio-live-lineup',
+  type: 'sports-live-lineup',
   name: 'Calcio Live Lineup Card',
   description: 'Mostra le formazioni di entrambe le squadre della prossima/attuale partita',
 });
