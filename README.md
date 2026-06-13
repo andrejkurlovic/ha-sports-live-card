@@ -45,7 +45,7 @@ All cards support the Lovelace **visual editor** — click the pencil icon on an
 Shows the full scoreboard for a competition.
 
 ```yaml
-type: custom:calcio-live-matches
+type: custom:sports-live-matches
 entity: sensor.sports_live_matches_eng_1
 ```
 
@@ -58,7 +58,7 @@ entity: sensor.sports_live_matches_eng_1
 Shows the league table.
 
 ```yaml
-type: custom:calcio-live-classifica
+type: custom:sports-live-classifica
 entity: sensor.sports_live_standings_eng_1
 ```
 
@@ -73,7 +73,7 @@ Supports soccer standings (W/D/L/GD/Pts) and rugby standings (W/D/L/PD/BP/TF/TA/
 Shows the next or current match for a tracked team.
 
 ```yaml
-type: custom:calcio-live-team
+type: custom:sports-live-team
 entity: sensor.sports_live_next_arsenal
 ```
 
@@ -88,7 +88,7 @@ Displays: opponent, date/time, venue, result, goalscorers, **UK broadcast channe
 Shows the knockout bracket or playoff tree.
 
 ```yaml
-type: custom:calcio-live-bracket
+type: custom:sports-live-bracket
 entity: sensor.sports_live_bracket_uefa_champions
 ```
 
@@ -103,7 +103,7 @@ Supports: two-legged ties (soccer), single-game rounds (NFL playoffs: Wild Card 
 Shows the starting lineup and bench for the next match.
 
 ```yaml
-type: custom:calcio-live-lineup
+type: custom:sports-live-lineup
 entity: sensor.sports_live_next_arsenal
 ```
 
@@ -118,7 +118,7 @@ Available for soccer (when ESPN provides lineup data before kick-off).
 Shows the latest headlines.
 
 ```yaml
-type: custom:calcio-live-news
+type: custom:sports-live-news
 entity: sensor.sports_live_news_eng_1
 ```
 
@@ -131,7 +131,7 @@ entity: sensor.sports_live_news_eng_1
 Shows in-match event timeline (goals, cards, subs).
 
 ```yaml
-type: custom:calcio-live-timeline
+type: custom:sports-live-timeline
 entity: sensor.sports_live_next_arsenal
 ```
 
@@ -145,13 +145,14 @@ The Sports Live integration sets a `broadcast_uk` attribute on every match (e.g.
 
 ---
 
-## Backward Compatibility
+## Running Both Card Bundles Together (Option B)
 
-Card editors discover both:
-- `sensor.sports_live_*` — new domain (this integration)
-- `sensor.calciolive_*` — original calcio-live domain
+This bundle registers `sports-live-*` element names only. The original `calcio-live-card` bundle registers `calcio-live-*` names. **Both can be installed simultaneously with no clashes.**
 
-**Existing dashboards do not need to be updated.**
+- Use `sports-live-card` for `sports_live_*` entities (this integration)
+- Keep `calcio-live-card` if you have existing dashboards using `calcio_live_*` sensors
+
+Card editors in both bundles discover both entity prefixes (`sensor.sports_live_*` and `sensor.calciolive_*`) so the visual editor always finds your entities.
 
 ---
 
