@@ -16,6 +16,8 @@ class CalcioLiveTimelineCard extends LitElement {
     applySkin(this, config);
     this.hideHeader = config.hide_header === true;
     this.reverseOrder = config.reverse_order === true;
+    this.showOnlyKey = config.show_only_key === true;
+    this.maxEvents = config.max_events ? parseInt(config.max_events, 10) : 0;
   }
 
   _t(key, vars) {
@@ -67,7 +69,16 @@ class CalcioLiveTimelineCard extends LitElement {
       `;
     }
 
-    const orderedEvents = this.reverseOrder ? [...events].reverse() : events;
+    let orderedEvents = this.reverseOrder ? [...events].reverse() : events;
+    if (this.showOnlyKey) {
+      orderedEvents = orderedEvents.filter(ev => {
+        const ty = (ev.type || '').toLowerCase();
+        const text = (ev.type_text || '').toLowerCase();
+        return ev.scoring_play || ty === 'goal' || text.includes('goal') ||
+               text.includes('yellow card') || text.includes('red card');
+      });
+    }
+    if (this.maxEvents > 0) orderedEvents = orderedEvents.slice(0, this.maxEvents);
 
     return html`
       <ha-card>

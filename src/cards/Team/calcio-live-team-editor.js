@@ -156,6 +156,38 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
+        <div class="option">
+          <label>Hide Venue</label>
+          <ha-switch
+            .checked=${this._config.hide_venue === true}
+            data-config-value="hide_venue"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide Form Badges</label>
+          <ha-switch
+            .checked=${this._config.hide_form === true}
+            data-config-value="hide_form"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide W/D/L Records</label>
+          <ha-switch
+            .checked=${this._config.hide_records === true}
+            data-config-value="hide_records"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide Top Scorer</label>
+          <ha-switch
+            .checked=${this._config.hide_top_scorer === true}
+            data-config-value="hide_top_scorer"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
         <div>
           <label class="field-label">TV Broadcast Region</label>
           <select data-config-value="broadcast_region" @change=${this._selectChanged}>

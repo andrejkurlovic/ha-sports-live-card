@@ -17,6 +17,7 @@ class CalcioLiveNewsCard extends LitElement {
     this.maxArticles = config.max_articles ? config.max_articles : 5;
     this.hideHeader = config.hide_header === true;
     this.hideImages = config.hide_images === true;
+    this.hideDescription = config.hide_description === true;
   }
 
   _t(key, vars) {
@@ -85,7 +86,7 @@ class CalcioLiveNewsCard extends LitElement {
                   <span class="date">${this._formatDate(a.published)}</span>
                 </div>
                 <div class="news-headline">${a.headline}</div>
-                ${a.description ? html`<div class="news-desc">${a.description}</div>` : ''}
+                ${!this.hideDescription && a.description ? html`<div class="news-desc">${a.description}</div>` : ''}
               </div>
             </article>
           `)}

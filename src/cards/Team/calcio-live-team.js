@@ -28,6 +28,10 @@ class CalcioLiveTeamNextCard extends LitElement {
     this.activeMatch = null;
     this.showEventToasts = config.show_event_toasts === true;
     this.hideHeader = config.hide_header === true;
+    this.hideForm = config.hide_form === true;
+    this.hideRecords = config.hide_records === true;
+    this.hideTopScorer = config.hide_top_scorer === true;
+    this.hideVenue = config.hide_venue === true;
     this._toastMessage = '';
     this._toastVisible = false;
     this._toastVariant = 'goal';
@@ -477,9 +481,9 @@ class CalcioLiveTeamNextCard extends LitElement {
               <img class="team-logo-big" src="${match.home_logo}" alt="${match.home_team}" />
             </div>
             <div class="team-name-big">${match.home_team}</div>
-            ${this._renderRecord(match.home_record)}
-            ${this._renderForm(match.home_form)}
-            ${!isLive ? this._renderTopScorer(match.home_top_scorer) : ''}
+            ${!this.hideRecords ? this._renderRecord(match.home_record) : ''}
+            ${!this.hideForm ? this._renderForm(match.home_form) : ''}
+            ${!isLive && !this.hideTopScorer ? this._renderTopScorer(match.home_top_scorer) : ''}
           </div>
 
           <div class="score-center">
@@ -495,19 +499,19 @@ class CalcioLiveTeamNextCard extends LitElement {
               <img class="team-logo-big" src="${match.away_logo}" alt="${match.away_team}" />
             </div>
             <div class="team-name-big">${match.away_team}</div>
-            ${this._renderRecord(match.away_record)}
-            ${this._renderForm(match.away_form)}
-            ${!isLive ? this._renderTopScorer(match.away_top_scorer) : ''}
+            ${!this.hideRecords ? this._renderRecord(match.away_record) : ''}
+            ${!this.hideForm ? this._renderForm(match.away_form) : ''}
+            ${!isLive && !this.hideTopScorer ? this._renderTopScorer(match.away_top_scorer) : ''}
           </div>
         </div>
 
         ${isLive ? this._renderStatsRow(match) : ''}
 
         <div class="meta-row">
-          <div class="meta-item venue-item">
+          ${!this.hideVenue ? html`<div class="meta-item venue-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span>${venueLabel}</span>
-          </div>
+          </div>` : ''}
           ${showScore
             ? html`<button class="info-btn" @click="${() => this.showDetails(match)}">${this._t('team.details')} ›</button>`
             : html`

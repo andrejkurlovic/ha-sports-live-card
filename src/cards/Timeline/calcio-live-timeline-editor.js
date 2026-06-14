@@ -17,7 +17,7 @@ class CalcioLiveTimelineEditor extends LitElement {
       .option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       label { font-size: 14px; color: var(--primary-text-color); }
       .field-label { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; font-weight: 600; }
-      select {
+      select, input[type="number"] {
         width: 100%; padding: 10px 12px; font-size: 14px;
         border-radius: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
@@ -61,6 +61,17 @@ class CalcioLiveTimelineEditor extends LitElement {
     if (!target.dataset || !target.dataset.configValue) return;
     const key = target.dataset.configValue;
     const value = target.checked;
+    if (this._config[key] === value) return;
+    this._fireConfigChanged({ ...this._config, [key]: value });
+  }
+
+  _numberChanged(ev) {
+    if (!this._config) return;
+    const target = ev.target;
+    if (!target.dataset || !target.dataset.configValue) return;
+    const key = target.dataset.configValue;
+    const value = parseInt(target.value, 10);
+    if (isNaN(value)) return;
     if (this._config[key] === value) return;
     this._fireConfigChanged({ ...this._config, [key]: value });
   }
@@ -118,6 +129,21 @@ class CalcioLiveTimelineEditor extends LitElement {
             data-config-value="reverse_order"
             @change=${this._switchChanged}
           ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Key Events Only (goals &amp; cards)</label>
+          <ha-switch
+            .checked=${this._config.show_only_key === true}
+            data-config-value="show_only_key"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div>
+          <label class="field-label">Max Events (0 = all)</label>
+          <input type="number" min="0" max="100"
+            .value=${this._config.max_events || 0}
+            data-config-value="max_events"
+            @change=${this._numberChanged} />
         </div>
         <div>
           <label class="field-label">Skin</label>

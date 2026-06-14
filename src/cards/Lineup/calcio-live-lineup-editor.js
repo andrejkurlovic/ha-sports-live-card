@@ -111,6 +111,22 @@ class CalcioLiveLineupEditor extends LitElement {
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
+        <div class="option">
+          <label>Show Bench Players</label>
+          <ha-switch
+            .checked=${this._config.show_bench !== false}
+            data-config-value="show_bench"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Show Player Photos</label>
+          <ha-switch
+            .checked=${this._config.show_photos !== false}
+            data-config-value="show_photos"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
         <div>
           <label class="field-label">Skin</label>
           <select data-config-value="skin" @change=${this._selectChanged}>

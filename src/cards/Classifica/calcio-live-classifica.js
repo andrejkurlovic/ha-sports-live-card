@@ -138,6 +138,8 @@ class CalcioLiveStandingsCard extends LitElement {
     applySkin(this, config);
     this.maxTeamsVisible = config.max_teams_visible ? config.max_teams_visible : 10;
     this.hideHeader = config.hide_header || false;
+    this.compact = config.compact === true;
+    this.highlightTeam = config.highlight_team || '';
     this.selectedGroup = config.selected_group || '';
     this.showEventToasts = config.show_event_toasts === true;
     this._toastMessage = '';
@@ -498,7 +500,10 @@ class CalcioLiveStandingsCard extends LitElement {
           ? this._renderGroupsGrid(standingsGroups, seasonName)
           : html`
             <div class="table-wrap" style="max-height: ${tableHeight}px;">
-              ${this._renderFullTable(filteredStandings, total)}
+              ${this.compact
+                ? this._renderCompactTable(filteredStandings, total)
+                : this._renderFullTable(filteredStandings, total)
+              }
             </div>
           `}
 
@@ -536,8 +541,10 @@ class CalcioLiveStandingsCard extends LitElement {
             const played = (w !== null && d !== null && l !== null) ? (w + d + l) : null;
             const gdClass = gd === null ? '' : (gd > 0 ? 'gd-pos' : (gd < 0 ? 'gd-neg' : ''));
             const gdLabel = gd === null ? '-' : (gd > 0 ? `+${gd}` : `${gd}`);
+            const isHighlighted = this.highlightTeam && team.team_name &&
+              team.team_name.toLowerCase().includes(this.highlightTeam.toLowerCase());
             return html`
-              <tr class="${this._zoneClass(team.rank, total)} clickable-row"
+              <tr class="${this._zoneClass(team.rank, total)} clickable-row ${isHighlighted ? 'highlighted' : ''}"
                   @click="${() => this.showTeamDetails(team)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
@@ -854,6 +861,11 @@ class CalcioLiveStandingsCard extends LitElement {
         font-size: 11px;
         font-weight: 900;
       }
+      .standings-table tbody tr.highlighted {
+        background: rgba(99,102,241,0.08) !important;
+        border-left: 3px solid var(--cl-accent);
+      }
+      .standings-table tbody tr.highlighted .tname { font-weight: 900; color: var(--cl-accent); }
       .zone-cl .rank-num {
         background: linear-gradient(135deg, var(--cl-cl), #4f46e5);
         color: white;

@@ -15,6 +15,8 @@ class CalcioLiveLineupCard extends LitElement {
     this._config = config;
     applySkin(this, config);
     this.hideHeader = config.hide_header === true;
+    this.showBench = config.show_bench !== false;
+    this.showPhotos = config.show_photos !== false;
   }
 
   _t(key, vars) {
@@ -39,7 +41,7 @@ class CalcioLiveLineupCard extends LitElement {
     return html`
       <div class="player" title="${p.name}">
         <div class="player-card">
-          ${p.headshot
+          ${this.showPhotos && p.headshot
             ? html`<img class="player-img" src="${p.headshot}" alt="${p.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
                    <div class="player-init" style="display:none;">${init}</div>`
             : html`<div class="player-init">${init}</div>`
@@ -109,7 +111,7 @@ class CalcioLiveLineupCard extends LitElement {
             <div class="players-grid">
               ${startersHome.map(p => this._renderPlayer(p))}
             </div>
-            ${benchHome.length ? html`
+            ${this.showBench && benchHome.length ? html`
               <div class="bench-label">${this._t('lineup.bench')}</div>
               <div class="players-grid bench">
                 ${benchHome.map(p => this._renderPlayer(p))}
@@ -128,7 +130,7 @@ class CalcioLiveLineupCard extends LitElement {
             <div class="players-grid">
               ${startersAway.map(p => this._renderPlayer(p))}
             </div>
-            ${benchAway.length ? html`
+            ${this.showBench && benchAway.length ? html`
               <div class="bench-label">${this._t('lineup.bench')}</div>
               <div class="players-grid bench">
                 ${benchAway.map(p => this._renderPlayer(p))}

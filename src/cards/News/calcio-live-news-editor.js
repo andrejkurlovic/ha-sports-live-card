@@ -131,6 +131,14 @@ class CalcioLiveNewsEditor extends LitElement {
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
+        <div class="option">
+          <label>Hide Descriptions</label>
+          <ha-switch
+            .checked=${this._config.hide_description === true}
+            data-config-value="hide_description"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
         <div>
           <label class="field-label">Max Articles</label>
           <input type="number" min="1" max="20"

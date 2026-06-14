@@ -40,6 +40,7 @@ class CalcioLiveClassificaCardEditor extends LitElement {
         margin-bottom: 4px;
         font-weight: 600;
       }
+      input[type="text"],
       select, input[type="number"] {
         width: 100%;
         padding: 10px 12px;
@@ -124,6 +125,16 @@ class CalcioLiveClassificaCardEditor extends LitElement {
     this._fireConfigChanged({ ...this._config, [key]: value });
   }
 
+  _textChanged(ev) {
+    if (!this._config) return;
+    const target = ev.target;
+    if (!target.dataset || !target.dataset.configValue) return;
+    const key = target.dataset.configValue;
+    const value = target.value;
+    if (this._config[key] === value) return;
+    this._fireConfigChanged({ ...this._config, [key]: value });
+  }
+
   _numberChanged(ev) {
     if (!this._config) return;
     const target = ev.target;
@@ -199,12 +210,32 @@ class CalcioLiveClassificaCardEditor extends LitElement {
         </div>
 
         <div class="option">
+          <label>Compact Table (Pos, Team, GD, Pts)</label>
+          <ha-switch
+            .checked=${this._config.compact === true}
+            data-config-value="compact"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+
+        <div class="option">
           <label>Show Event Toasts (in-card)</label>
           <ha-switch
             .checked=${this._config.show_event_toasts === true}
             data-config-value="show_event_toasts"
             @change=${this._switchChanged}
           ></ha-switch>
+        </div>
+
+        <div>
+          <label class="field-label">Highlight Team (partial name match)</label>
+          <input
+            type="text"
+            placeholder="e.g. Arsenal"
+            .value=${this._config.highlight_team || ''}
+            data-config-value="highlight_team"
+            @change=${this._textChanged}
+          />
         </div>
 
         <div>
