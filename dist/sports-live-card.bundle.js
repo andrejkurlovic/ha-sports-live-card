@@ -109,7 +109,8 @@
         </thead>
         <tbody>
           ${e.map((e=>U`
-              <tr class="${this._zoneClass(e.rank,t)}">
+              <tr class="${this._zoneClass(e.rank,t)} clickable-row"
+                  @click="${()=>this.showTeamDetails(e)}">
                 <td><div class="rank-cell"><div class="rank-num">${e.rank}</div></div></td>
                 <td class="team-cell">
                   <img src="${e.team_logo}" alt="${e.team_name}" />

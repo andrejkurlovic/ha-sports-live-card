@@ -667,7 +667,8 @@ class SportsLiveStandingsCard extends LitElement {
         </thead>
         <tbody>
           ${standings.map(team => html`
-              <tr class="${this._zoneClass(team.rank, total)}">
+              <tr class="${this._zoneClass(team.rank, total)} clickable-row"
+                  @click="${() => this.showTeamDetails(team)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
                   <img src="${team.team_logo}" alt="${team.team_name}" />
