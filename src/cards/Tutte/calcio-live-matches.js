@@ -79,7 +79,8 @@ class CalcioLiveTodayMatchesCard extends LitElement {
 
     this._eventSubscriptions = [];
 
-    ['calcio_live_goal', 'calcio_live_yellow_card', 'calcio_live_red_card'].forEach(evt => {
+    // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
+    ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
       this.hass.connection.subscribeEvents(
         this._handleCalcioLiveEvent.bind(this),
         evt
@@ -105,7 +106,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
     if (!this._eventBelongsToThisCard(eventData)) return;
 
     const matchKey = `${eventData.home_team}_${eventData.away_team}`;
-    this._recentEventMatches.set(matchKey, eventType === 'calcio_live_goal' ? 'goal' : 'card');
+    this._recentEventMatches.set(matchKey, eventType === 'sports_live_score' ? 'goal' : 'card');
     this.requestUpdate();
     setTimeout(() => {
       this._recentEventMatches.delete(matchKey);
@@ -120,15 +121,21 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   _showEventToast(eventType, eventData) {
     let message = '';
     let variant = 'goal';
-    if (eventType === 'calcio_live_goal') {
-      message = `<strong>${this._t('event.goal').toUpperCase()}!</strong> ${eventData.player} · ${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
+    if (eventType === 'sports_live_score') {
+      const label = (eventData.score_event_label || this._t('event.goal')).toUpperCase();
+      const scorer = eventData.player && eventData.player !== 'N/A' ? `${eventData.player} · ` : '';
+      message = `<strong>${label}!</strong> ${scorer}${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
       variant = 'goal';
-    } else if (eventType === 'calcio_live_yellow_card') {
-      message = `🟨 <strong>${this._t('event.yellow_card')}</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'yellow';
-    } else if (eventType === 'calcio_live_red_card') {
-      message = `🟥 <strong>${this._t('event.red_card')}</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'red';
+    } else if (eventType === 'sports_live_discipline') {
+      const dt = String(eventData.discipline_type || '').toUpperCase();
+      const min = eventData.minute && eventData.minute !== 'N/A' ? ` (${eventData.minute}')` : '';
+      if (dt === 'YELLOW') {
+        message = `🟨 <strong>${this._t('event.yellow_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'yellow';
+      } else if (dt === 'RED') {
+        message = `🟥 <strong>${this._t('event.red_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'red';
+      }
     }
     if (!message) return;
     this._toastMessage = message;

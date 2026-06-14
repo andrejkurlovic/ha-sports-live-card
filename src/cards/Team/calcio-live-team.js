@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
-import { skinStyles, applySkin } from "../../skins.js";
+import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 
 class CalcioLiveTeamNextCard extends LitElement {
   static get properties() {
@@ -40,6 +40,16 @@ class CalcioLiveTeamNextCard extends LitElement {
 
   _t(key, vars) {
     return t(key, resolveLang(this.hass, this._config), vars);
+  }
+
+  _sportIcon() {
+    const stateObj = this.hass?.states?.[this._config?.entity];
+    const sport = stateObj?.attributes?.sport || '';
+    const icons = {
+      soccer: '⚽', nfl: '🏈', rugby: '🏉', nba: '🏀',
+      nhl: '🏒', mlb: '⚾', cricket: '🏏', tennis: '🎾', mma: '🥊',
+    };
+    return icons[sport] || '⚽';
   }
 
   _translatePhase(phase) {
@@ -90,7 +100,9 @@ class CalcioLiveTeamNextCard extends LitElement {
 
     this._eventSubscriptions = [];
 
-    ['calcio_live_goal', 'calcio_live_yellow_card', 'calcio_live_red_card'].forEach(evt => {
+    // Canonical events are fired by the backend for ALL sports (the legacy
+    // calcio_live_* aliases are soccer-only and kept for user automations).
+    ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
       this.hass.connection.subscribeEvents(
         this._handleCalcioLiveEvent.bind(this),
         evt
@@ -118,7 +130,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     if (!this._eventBelongsToThisCard(eventData)) return;
     if (!this.showEventToasts) return;
 
-    if (eventType === 'calcio_live_goal') {
+    if (eventType === 'sports_live_score') {
       const scoringSide = eventData.team === eventData.home_team ? 'home' : 'away';
       requestAnimationFrame(() => this._triggerGoalCelebration(scoringSide, eventData));
     } else {
@@ -129,15 +141,22 @@ class CalcioLiveTeamNextCard extends LitElement {
   _showEventToast(eventType, eventData) {
     let message = '';
     let variant = 'goal';
-    if (eventType === 'calcio_live_goal') {
-      message = `<strong>${this._t('event.goal').toUpperCase()}!</strong> ${eventData.player} · ${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
+    if (eventType === 'sports_live_score') {
+      // score_event_label is sport-specific (Goal / Try / Touchdown / Run …)
+      const label = (eventData.score_event_label || this._t('event.goal')).toUpperCase();
+      const scorer = eventData.player && eventData.player !== 'N/A' ? `${eventData.player} · ` : '';
+      message = `<strong>${label}!</strong> ${scorer}${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
       variant = 'goal';
-    } else if (eventType === 'calcio_live_yellow_card') {
-      message = `🟨 <strong>${this._t('event.yellow_card')}</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'yellow';
-    } else if (eventType === 'calcio_live_red_card') {
-      message = `🟥 <strong>${this._t('event.red_card')}</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'red';
+    } else if (eventType === 'sports_live_discipline') {
+      const dt = String(eventData.discipline_type || '').toUpperCase();
+      const min = eventData.minute && eventData.minute !== 'N/A' ? ` (${eventData.minute}')` : '';
+      if (dt === 'YELLOW') {
+        message = `🟨 <strong>${this._t('event.yellow_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'yellow';
+      } else if (dt === 'RED') {
+        message = `🟥 <strong>${this._t('event.red_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'red';
+      }
     }
     if (!message) return;
     this._toastMessage = message;
@@ -191,7 +210,7 @@ class CalcioLiveTeamNextCard extends LitElement {
 
     if (navigator.vibrate) navigator.vibrate([180, 80, 180, 80, 280]);
 
-    setTimeout(() => this._showEventToast('calcio_live_goal', eventData), 600);
+    setTimeout(() => this._showEventToast('sports_live_score', eventData), 600);
 
     const colors = ['#ec4899', '#6366f1', '#06b6d4', '#fbbf24', '#10b981', '#ef4444'];
     const emojis = ['⚽', '🎉', '✨', '🔥', '⭐'];
@@ -469,7 +488,7 @@ class CalcioLiveTeamNextCard extends LitElement {
 
         ${!this.hideHeader ? html`<div class="top-bar">
           <div class="competition">
-            <span class="comp-icon">⚽</span>
+            <span class="comp-icon">${this._sportIcon()}</span>
             <span class="comp-name">${competitionLabel || ' '}</span>
           </div>
           ${this._renderStatusBadge(match)}
@@ -576,33 +595,46 @@ class CalcioLiveTeamNextCard extends LitElement {
 
     const m = this.activeMatch;
     const tx = (k) => this._t(k);
+
+    // Skin-aware palette. The popup is appended to document.body (outside the
+    // card's shadow DOM), so the card's --cl-* vars don't reach it; we set our
+    // own custom properties on the container and reference them via var().
+    const isLight = resolveSkin(this._config) === 'light';
+    popupContainer.style.setProperty('--p-bg', isLight ? '#ffffff' : '#1a1f2e');
+    popupContainer.style.setProperty('--p-panel', isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)');
+    popupContainer.style.setProperty('--p-text', isLight ? '#14182a' : '#f8fafc');
+    popupContainer.style.setProperty('--p-sub', isLight ? '#5b6577' : '#94a3b8');
+    popupContainer.style.setProperty('--p-border', isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.08)');
+
+    // Soccer exposes possession/shots stats; other sports use summary leaders.
+    const hs = m.home_statistics || {};
+    const hasSoccerStats = hs.possessionPct != null || hs.totalShots != null || hs.shotsOnTarget != null;
+    const statBlock = (team, s) => `
+      <div style="background:var(--p-panel); padding:14px; border-radius:14px;">
+        <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--p-sub); font-weight:700; margin-bottom:6px;">${team}</div>
+        <div style="font-size:13px;"><span style="color:var(--p-sub);">${tx('team.possession')}:</span> <strong>${s?.possessionPct ?? '—'}%</strong></div>
+        <div style="font-size:13px;"><span style="color:var(--p-sub);">${tx('team.shots')}:</span> <strong>${s?.totalShots ?? '—'}</strong></div>
+        <div style="font-size:13px;"><span style="color:var(--p-sub);">${tx('team.on_target')}:</span> <strong>${s?.shotsOnTarget ?? '—'}</strong></div>
+        <div style="font-size:13px;"><span style="color:var(--p-sub);">${tx('team.fouls')}:</span> <strong>${s?.foulsCommitted ?? '—'}</strong></div>
+      </div>`;
+    const statsGrid = hasSoccerStats ? `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
+          ${statBlock(m.home_team, m.home_statistics)}
+          ${statBlock(m.away_team, m.away_statistics)}
+        </div>` : '';
+
     popupContainer.innerHTML = `
-      <div style="background: #1a1f2e; padding: 24px; border-radius: 20px; width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 64px rgba(0,0,0,0.6); margin: auto; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">
+      <div style="background: var(--p-bg); padding: 24px; border-radius: 20px; width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto; border: 1px solid var(--p-border); box-shadow: 0 24px 64px rgba(0,0,0,0.6); margin: auto; color: var(--p-text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">
         <h3 style="margin:0 0 20px; font-size: 22px; font-weight: 800; letter-spacing:-0.02em; background: linear-gradient(135deg,#6366f1,#ec4899); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color: transparent;">${tx('popup.match_details')}</h3>
         <div style="display:flex; justify-content:center; align-items:center; gap:18px; margin-bottom:24px;">
           <img style="width:72px; height:72px; object-fit:contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${m.home_logo}" alt="${m.home_team}" />
           <div style="text-align:center;">
             <div style="font-size:42px; font-weight:900; letter-spacing:-0.04em; line-height:1;">${m.home_score ?? '-'} <span style="opacity:0.4;">-</span> ${m.away_score ?? '-'}</div>
-            <div style="font-size:12px; color:#94a3b8; margin-top:8px; font-weight:600;">${m.clock ?? m.status ?? ''}</div>
+            <div style="font-size:12px; color:var(--p-sub); margin-top:8px; font-weight:600;">${m.clock ?? m.status ?? ''}</div>
           </div>
           <img style="width:72px; height:72px; object-fit:contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${m.away_logo}" alt="${m.away_team}" />
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
-          <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:14px;">
-            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#94a3b8; font-weight:700; margin-bottom:6px;">${m.home_team}</div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.possession')}:</span> <strong>${m.home_statistics?.possessionPct ?? '—'}%</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.shots')}:</span> <strong>${m.home_statistics?.totalShots ?? '—'}</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.on_target')}:</span> <strong>${m.home_statistics?.shotsOnTarget ?? '—'}</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.fouls')}:</span> <strong>${m.home_statistics?.foulsCommitted ?? '—'}</strong></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:14px;">
-            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#94a3b8; font-weight:700; margin-bottom:6px;">${m.away_team}</div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.possession')}:</span> <strong>${m.away_statistics?.possessionPct ?? '—'}%</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.shots')}:</span> <strong>${m.away_statistics?.totalShots ?? '—'}</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.on_target')}:</span> <strong>${m.away_statistics?.shotsOnTarget ?? '—'}</strong></div>
-            <div style="font-size:13px;"><span style="color:#94a3b8;">${tx('team.fouls')}:</span> <strong>${m.away_statistics?.foulsCommitted ?? '—'}</strong></div>
-          </div>
-        </div>
+        ${statsGrid}
         <div id="team-events-container"></div>
         <button id="popup-close-btn" style="background:linear-gradient(135deg,#6366f1,#ec4899); color:white; padding:12px 20px; border:none; border-radius:12px; cursor:pointer; margin-top:20px; font-weight:800; width:100%; font-size:14px;">${tx('generic.close')}</button>
       </div>
@@ -617,7 +649,7 @@ class CalcioLiveTeamNextCard extends LitElement {
       if (!items.length) return '';
       return `<div style="margin-bottom:14px; padding:14px; background:${color.bg}; border-left:3px solid ${color.border}; border-radius:10px;">
         <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:${color.border}; font-weight:800;">${title}</h5>
-        <ul style="margin:0; padding-left:18px; font-size:13px; color:#cbd5e1;">${items.map(i => `<li style="margin:4px 0;">${i}</li>`).join('')}</ul>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--p-text);">${items.map(i => `<li style="margin:4px 0;">${i}</li>`).join('')}</ul>
       </div>`;
     };
     let eventsHTML = '';
@@ -628,6 +660,35 @@ class CalcioLiveTeamNextCard extends LitElement {
     eventsHTML += renderGroup(tx('event.conversion'), conversions, { bg: 'rgba(16,185,129,0.07)', border: '#34d399' });
     eventsHTML += renderGroup(tx('event.penalty_goal'), penaltyGoals, { bg: 'rgba(251,191,36,0.1)', border: '#fbbf24' });
     eventsHTML += renderGroup(tx('event.drop_goal'), dropGoals, { bg: 'rgba(99,102,241,0.07)', border: '#818cf8' });
+
+    // Scoring plays — NBA/NHL/MLB/NFL (soccer uses the event groups above).
+    const scoringPlays = m.scoring_plays || [];
+    if (scoringPlays.length) {
+      const rows = scoringPlays.slice().reverse().slice(0, 12).map(p => `
+        <li style="display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:start; padding:5px 0; border-bottom:1px solid var(--p-border); font-size:12px;">
+          <span style="font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums; white-space:nowrap;">${[p.period, p.clock].filter(Boolean).join(' ')}</span>
+          <span style="color:var(--p-text);">${p.text || ''}</span>
+          <span style="font-weight:800; color:var(--p-text); white-space:nowrap; font-variant-numeric:tabular-nums;">${p.home_score ?? ''}-${p.away_score ?? ''}</span>
+        </li>`).join('');
+      eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(99,102,241,0.1); border-left:3px solid #6366f1; border-radius:10px;">
+        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#818cf8; font-weight:800;">${tx('popup.scoring_plays')}</h5>
+        <ul style="margin:0; padding:0; list-style:none;">${rows}</ul>
+      </div>`;
+    }
+
+    // Stat leaders — generic per-sport (points/assists/rebounds, HR/RBI, …).
+    const statLeaders = m.stat_leaders || [];
+    if (statLeaders.length) {
+      const teamCol = (tl) => `
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--p-sub); font-weight:800; margin-bottom:6px;">${tl.team_name || ''}</div>
+          ${(tl.categories || []).slice(0, 4).map(c => `<div style="font-size:12px; color:var(--p-text); margin:3px 0;"><span style="color:var(--p-sub);">${c.display_name}:</span> ${c.short_name || c.athlete} <strong>${c.value}</strong></div>`).join('')}
+        </div>`;
+      eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(251,191,36,0.08); border-left:3px solid #fbbf24; border-radius:10px;">
+        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${tx('popup.stat_leaders')}</h5>
+        <div style="display:flex; gap:16px;">${statLeaders.slice(0, 2).map(teamCol).join('')}</div>
+      </div>`;
+    }
 
     // Lineup (se disponibile dal sensor team_match arricchito con summary)
     const lineupHome = m.lineup_home || [];
@@ -640,11 +701,11 @@ class CalcioLiveTeamNextCard extends LitElement {
         if (!starters.length) return '';
         return `<div style="margin-bottom:8px;">
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-size:12px; font-weight:800; color:#fff;">${label}</span>
+            <span style="font-size:12px; font-weight:800; color:var(--p-text);">${label}</span>
             ${formation ? `<span style="font-size:10px; font-weight:700; color:#6366f1; letter-spacing:0.1em;">${formation}</span>` : ''}
           </div>
-          <div style="font-size:12px; color:#cbd5e1; line-height:1.7;">
-            ${starters.map(p => `<span style="display:inline-block; padding:2px 8px; background:rgba(255,255,255,0.05); border-radius:6px; margin:2px;">${p.jersey ? `<strong style="color:#fbbf24;">${p.jersey}</strong> ` : ''}${p.short_name || p.name}</span>`).join('')}
+          <div style="font-size:12px; color:var(--p-text); line-height:1.7;">
+            ${starters.map(p => `<span style="display:inline-block; padding:2px 8px; background:var(--p-panel); border-radius:6px; margin:2px;">${p.jersey ? `<strong style="color:#fbbf24;">${p.jersey}</strong> ` : ''}${p.short_name || p.name}</span>`).join('')}
           </div>
         </div>`;
       };
@@ -673,10 +734,10 @@ class CalcioLiveTeamNextCard extends LitElement {
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(251,191,36,0.08); border-left:3px solid #fbbf24; border-radius:10px;">
         <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${tx('popup.timeline')}</h5>
         <ul style="margin:0; padding:0; list-style:none;">
-          ${keyEvents.map(e => `<li style="display:grid; grid-template-columns:36px 24px 1fr; gap:8px; align-items:start; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:#cbd5e1;">
-            <span style="text-align:right; font-weight:700; color:#94a3b8; font-variant-numeric:tabular-nums;">${e.clock || ''}</span>
+          ${keyEvents.map(e => `<li style="display:grid; grid-template-columns:36px 24px 1fr; gap:8px; align-items:start; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:var(--p-text);">
+            <span style="text-align:right; font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums;">${e.clock || ''}</span>
             <span style="text-align:center;">${iconOf(e)}</span>
-            <span><strong style="color:#fff;">${(e.athletes||[]).filter(Boolean).join(', ') || e.type_text || ''}</strong>${e.team ? `<br><span style="color:#94a3b8; font-size:11px;">${e.team}</span>` : ''}</span>
+            <span><strong style="color:var(--p-text);">${(e.athletes||[]).filter(Boolean).join(', ') || e.type_text || ''}</strong>${e.team ? `<br><span style="color:var(--p-sub); font-size:11px;">${e.team}</span>` : ''}</span>
           </li>`).join('')}
         </ul>
       </div>`;
@@ -690,16 +751,16 @@ class CalcioLiveTeamNextCard extends LitElement {
         <ul style="margin:0; padding:0; list-style:none;">
           ${h2h.slice(0, 8).map(g => {
             const dt = g.date ? new Date(g.date).toLocaleDateString(resolveLang(this.hass, this._config)) : '';
-            return `<li style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:#cbd5e1;">
+            return `<li style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:var(--p-text);">
               <span>${g.home_team} <strong>${g.home_score ?? '-'}</strong> - <strong>${g.away_score ?? '-'}</strong> ${g.away_team}</span>
-              <span style="color:#94a3b8;">${dt}</span>
+              <span style="color:var(--p-sub);">${dt}</span>
             </li>`;
           }).join('')}
         </ul>
       </div>`;
     }
 
-    eventsContainer.innerHTML = eventsHTML || `<p style="text-align:center; color:#94a3b8; font-size:13px;">${tx('popup.no_events')}</p>`;
+    eventsContainer.innerHTML = eventsHTML || `<p style="text-align:center; color:var(--p-sub); font-size:13px;">${tx('popup.no_events')}</p>`;
   }
 
   static get styles() {

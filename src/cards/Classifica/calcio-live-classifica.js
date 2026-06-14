@@ -177,7 +177,8 @@ class CalcioLiveStandingsCard extends LitElement {
 
     this._eventSubscriptions = [];
 
-    ['calcio_live_goal', 'calcio_live_yellow_card', 'calcio_live_red_card'].forEach(evt => {
+    // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
+    ['sports_live_score', 'sports_live_discipline', 'sports_live_match_finished'].forEach(evt => {
       this.hass.connection.subscribeEvents(
         this._handleCalcioLiveEvent.bind(this),
         evt
@@ -209,17 +210,23 @@ class CalcioLiveStandingsCard extends LitElement {
   _showEventToast(eventType, eventData) {
     let message = '';
     let variant = 'goal';
-    if (eventType === 'calcio_live_goal') {
-      message = `<strong>GOAL!</strong> ${eventData.player} · ${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
+    const min = eventData.minute && eventData.minute !== 'N/A' ? ` (${eventData.minute}')` : '';
+    if (eventType === 'sports_live_score') {
+      const label = (eventData.score_event_label || this._t('event.goal')).toUpperCase();
+      const scorer = eventData.player && eventData.player !== 'N/A' ? `${eventData.player} · ` : '';
+      message = `<strong>${label}!</strong> ${scorer}${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
       variant = 'goal';
-    } else if (eventType === 'calcio_live_yellow_card') {
-      message = `🟨 <strong>Cartellino Giallo</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'yellow';
-    } else if (eventType === 'calcio_live_red_card') {
-      message = `🟥 <strong>Cartellino Rosso</strong> · ${eventData.player}${eventData.minute ? ` (${eventData.minute}')` : ''}`;
-      variant = 'red';
-    } else if (eventType === 'calcio_live_match_finished') {
-      message = `<strong>Finita!</strong> ${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
+    } else if (eventType === 'sports_live_discipline') {
+      const dt = String(eventData.discipline_type || '').toUpperCase();
+      if (dt === 'YELLOW') {
+        message = `🟨 <strong>${this._t('event.yellow_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'yellow';
+      } else if (dt === 'RED') {
+        message = `🟥 <strong>${this._t('event.red_card')}</strong> · ${eventData.player}${min}`;
+        variant = 'red';
+      }
+    } else if (eventType === 'sports_live_match_finished') {
+      message = `<strong>${this._t('status.full_time')}</strong> ${eventData.home_team} ${eventData.home_score} - ${eventData.away_score} ${eventData.away_team}`;
       variant = 'finished';
     }
     if (!message) return;

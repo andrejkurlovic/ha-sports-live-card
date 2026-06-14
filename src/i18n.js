@@ -144,6 +144,8 @@ const TRANSLATIONS = {
     // Match details popup
     'popup.match_details': 'Match details',
     'popup.lineups': 'Lineups',
+    'popup.scoring_plays': 'Scoring Plays',
+    'popup.stat_leaders': 'Stat Leaders',
     'popup.timeline': 'Timeline',
     'popup.h2h': 'Head-to-head',
     'popup.no_events': 'No events available',
@@ -278,6 +280,8 @@ const TRANSLATIONS = {
 
     'popup.match_details': 'Wedstrijddetails',
     'popup.lineups': 'Opstellingen',
+    'popup.scoring_plays': 'Scorende acties',
+    'popup.stat_leaders': 'Topspelers',
     'popup.timeline': 'Tijdlijn',
     'popup.h2h': 'Onderlinge duels',
     'popup.no_events': 'Geen gebeurtenissen beschikbaar',
@@ -400,6 +404,8 @@ const TRANSLATIONS = {
 
     'popup.match_details': 'Dettagli partita',
     'popup.lineups': 'Formazioni',
+    'popup.scoring_plays': 'Marcature',
+    'popup.stat_leaders': 'Migliori giocatori',
     'popup.timeline': 'Cronologia',
     'popup.h2h': 'Precedenti',
     'popup.no_events': 'Nessun evento disponibile',
@@ -521,6 +527,8 @@ const TRANSLATIONS = {
 
     'popup.match_details': 'Détails du match',
     'popup.lineups': 'Compositions',
+    'popup.scoring_plays': 'Actions de score',
+    'popup.stat_leaders': 'Meneurs',
     'popup.timeline': 'Chronologie',
     'popup.h2h': 'Confrontations',
     'popup.no_events': 'Aucun événement disponible',
@@ -642,6 +650,8 @@ const TRANSLATIONS = {
 
     'popup.match_details': 'Detalles del partido',
     'popup.lineups': 'Alineaciones',
+    'popup.scoring_plays': 'Anotaciones',
+    'popup.stat_leaders': 'Líderes',
     'popup.timeline': 'Cronología',
     'popup.h2h': 'Enfrentamientos',
     'popup.no_events': 'Sin eventos disponibles',
