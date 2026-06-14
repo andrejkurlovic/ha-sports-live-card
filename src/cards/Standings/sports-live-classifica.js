@@ -593,6 +593,7 @@ class SportsLiveStandingsCard extends LitElement {
     // Soccer / rugby: show W/D/L/Pts so group-stage tables (World Cup, UEFA, Copa)
     // have the same essential info as the full single-group table.
     return [
+      { key: 'played', label: 'col.played' },
       { key: 'wins',   label: 'col.wins' },
       { key: 'draws',  label: 'col.draws' },
       { key: 'losses', label: 'col.losses' },
