@@ -27,6 +27,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     this.showPopup = false;
     this.activeMatch = null;
     this.showEventToasts = config.show_event_toasts === true;
+    this.hideHeader = config.hide_header === true;
     this._toastMessage = '';
     this._toastVisible = false;
     this._toastVariant = 'goal';
@@ -462,13 +463,13 @@ class CalcioLiveTeamNextCard extends LitElement {
           <div class="event-toast variant-${this._toastVariant}" .innerHTML=${this._toastMessage}></div>
         ` : ''}
 
-        <div class="top-bar">
+        ${!this.hideHeader ? html`<div class="top-bar">
           <div class="competition">
             <span class="comp-icon">⚽</span>
             <span class="comp-name">${competitionLabel || ' '}</span>
           </div>
           ${this._renderStatusBadge(match)}
-        </div>
+        </div>` : ''}
 
         <div class="scoreboard">
           <div class="team-side home">

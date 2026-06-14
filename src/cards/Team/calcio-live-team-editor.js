@@ -141,6 +141,14 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
 
         <h3>Settings</h3>
         <div class="option">
+          <label>Hide Header</label>
+          <ha-switch
+            .checked=${this._config.hide_header === true}
+            data-config-value="hide_header"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
           <label>Show Event Toasts (in-card)</label>
           <ha-switch
             .checked=${this._config.show_event_toasts === true}
