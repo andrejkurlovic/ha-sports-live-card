@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
-import { skinStyles, applySkin } from "../../skins.js";
+import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
+import { openModal, closeModal, esc } from "../../modal-helper.js";
 
 class SportsLiveTodayMatchesCard extends LitElement {
   static get properties() {
@@ -66,33 +67,64 @@ class SportsLiveTodayMatchesCard extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     if (this._clockTick) { clearInterval(this._clockTick); this._clockTick = null; }
-
+    closeModal('sports-live-matches-popup');
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
-      this._eventSubscriptions.forEach(unsub => {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
-      });
+      this._eventSubscriptions.forEach(unsub => { if (typeof unsub === 'function') unsub(); });
       this._eventSubscriptions = [];
     }
   }
 
   _subscribeToEvents() {
-    if (!this.hass || !this.hass.connection) return;
-
+    if (!this.hass?.connection) return;
     this._eventSubscriptions = [];
+    let fallbackScheduled = false;
 
-    // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
-    ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
+    const tryCustomSub = (eventType) => {
       this.hass.connection.subscribeEvents(
-        this._handleSportsLiveEvent.bind(this),
-        evt
+        this._handleSportsLiveEvent.bind(this), eventType,
       ).then(unsub => {
-        if (typeof unsub === 'function') {
-          this._eventSubscriptions.push(unsub);
+        if (typeof unsub === 'function') this._eventSubscriptions.push(unsub);
+      }).catch(() => {
+        if (!fallbackScheduled) {
+          fallbackScheduled = true;
+          this._setupStateChangedFallback();
         }
       });
-    });
+    };
+
+    tryCustomSub('sports_live_score');
+    tryCustomSub('sports_live_discipline');
+  }
+
+  // Fallback for restricted HA users: diff the competition entity state to detect
+  // score changes and fire synthetic events into the existing handler.
+  _setupStateChangedFallback() {
+    if (!this.hass?.connection) return;
+    this.hass.connection.subscribeEvents((event) => {
+      if (event.data.entity_id !== this._config?.entity) return;
+      const newMatches = event.data.new_state?.attributes?.matches || [];
+      const oldMatches = event.data.old_state?.attributes?.matches || [];
+      newMatches.forEach((newM) => {
+        if (newM.state !== 'in') return;
+        const oldM = oldMatches.find(
+          (o) => o.home_team === newM.home_team && o.away_team === newM.away_team,
+        );
+        if (!oldM) return;
+        const base = {
+          home_team: newM.home_team, away_team: newM.away_team,
+          home_score: newM.home_score, away_score: newM.away_score,
+          player: 'N/A', score_event_label: null,
+        };
+        if (String(newM.home_score) !== String(oldM.home_score)) {
+          this._handleSportsLiveEvent({ event_type: 'sports_live_score', data: { ...base, team: newM.home_team } });
+        }
+        if (String(newM.away_score) !== String(oldM.away_score)) {
+          this._handleSportsLiveEvent({ event_type: 'sports_live_score', data: { ...base, team: newM.away_team } });
+        }
+      });
+    }, 'state_changed')
+      .then(unsub => { if (typeof unsub === 'function') this._eventSubscriptions.push(unsub); })
+      .catch(() => {});
   }
 
   _eventBelongsToThisCard(eventData) {
@@ -448,65 +480,51 @@ class SportsLiveTodayMatchesCard extends LitElement {
 
   renderPopupToBody() {
     if (!this.showPopup || !this.activeMatch) {
-      const existingPopup = document.getElementById('sports-live-matches-popup');
-      if (existingPopup) existingPopup.remove();
+      closeModal('sports-live-matches-popup');
       return;
-    }
-    let popupContainer = document.getElementById('sports-live-matches-popup');
-    if (!popupContainer) {
-      popupContainer = document.createElement('div');
-      popupContainer.id = 'sports-live-matches-popup';
-      popupContainer.style.cssText = `
-        position: fixed; inset: 0;
-        display: flex; justify-content: center; align-items: center;
-        z-index: 999999;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(8px);
-        overflow: auto;
-      `;
-      popupContainer.addEventListener('click', (e) => {
-        if (e.target === popupContainer) this.showPopup = false;
-      });
-      document.body.appendChild(popupContainer);
     }
     const m = this.activeMatch;
     const tx = (k) => this._t(k);
+    const isLight = resolveSkin(this._config) === 'light';
+    const popupContainer = openModal('sports-live-matches-popup', isLight, () => { this.showPopup = false; });
+
     popupContainer.innerHTML = `
-      <div style="background:#1a1f2e; padding:24px; border-radius:20px; width:90%; max-width:560px; max-height:85vh; overflow-y:auto; border:1px solid rgba(255,255,255,0.08); box-shadow:0 24px 64px rgba(0,0,0,0.6); margin:auto; color:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
-        <h3 style="margin:0 0 20px; font-size:22px; font-weight:800; letter-spacing:-0.02em; background:linear-gradient(135deg,#6366f1,#ec4899); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">${tx('popup.match_details')}</h3>
-        <div style="display:flex; justify-content:center; align-items:center; gap:18px; margin-bottom:24px;">
-          <img style="width:64px; height:64px; object-fit:contain;" src="${m.home_logo}" alt="${m.home_team}" />
+      <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
+        <h3 style="margin:0 0 20px;font-size:22px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${esc(tx('popup.match_details'))}</h3>
+        <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:24px;">
+          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(m.home_logo)}" alt="${esc(m.home_team)}" />
           <div style="text-align:center;">
-            <div style="font-size:38px; font-weight:900; letter-spacing:-0.04em; line-height:1;">${m.home_score ?? '-'} <span style="opacity:0.4;">-</span> ${m.away_score ?? '-'}</div>
-            <div style="font-size:12px; color:#94a3b8; margin-top:8px; font-weight:600;">${m.clock ?? m.status ?? ''}</div>
+            <div style="font-size:38px;font-weight:900;letter-spacing:-0.04em;line-height:1;">${esc(m.home_score ?? '-')} <span style="opacity:0.4;">-</span> ${esc(m.away_score ?? '-')}</div>
+            <div style="font-size:12px;color:var(--p-sub);margin-top:8px;font-weight:600;">${esc(m.clock ?? m.status ?? '')}</div>
           </div>
-          <img style="width:64px; height:64px; object-fit:contain;" src="${m.away_logo}" alt="${m.away_team}" />
+          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(m.away_logo)}" alt="${esc(m.away_team)}" />
         </div>
-        <p style="text-align:center; color:#cbd5e1; font-size:14px; margin:0 0 20px;"><strong>${m.home_team}</strong> vs <strong>${m.away_team}</strong></p>
+        <p style="text-align:center;color:var(--p-muted);font-size:14px;margin:0 0 20px;"><strong>${esc(m.home_team)}</strong> vs <strong>${esc(m.away_team)}</strong></p>
         <div id="matches-events-container"></div>
-        <button id="popup-close-btn" style="background:linear-gradient(135deg,#6366f1,#ec4899); color:white; padding:12px 20px; border:none; border-radius:12px; cursor:pointer; margin-top:20px; font-weight:800; width:100%; font-size:14px;">${tx('generic.close')}</button>
+        <button id="matches-popup-close" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:20px;font-weight:800;width:100%;font-size:14px;">${esc(tx('generic.close'))}</button>
       </div>
     `;
-    const closeBtn = popupContainer.querySelector('#popup-close-btn');
-    if (closeBtn) closeBtn.addEventListener('click', () => { this.showPopup = false; });
+
+    popupContainer.querySelector('#matches-popup-close').onclick = () => { this.showPopup = false; };
+
     const eventsContainer = popupContainer.querySelector('#matches-events-container');
     const { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals } = this.separateEvents(m.match_details || []);
     const renderGroup = (title, items, color) => {
       if (!items.length) return '';
-      return `<div style="margin-bottom:14px; padding:14px; background:${color.bg}; border-left:3px solid ${color.border}; border-radius:10px;">
-        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:${color.border}; font-weight:800;">${title}</h5>
-        <ul style="margin:0; padding-left:18px; font-size:13px; color:#cbd5e1;">${items.map(i => `<li style="margin:4px 0;">${i}</li>`).join('')}</ul>
+      return `<div style="margin-bottom:14px;padding:14px;background:${color.bg};border-left:3px solid ${color.border};border-radius:10px;">
+        <h5 style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:${color.border};font-weight:800;">${esc(title)}</h5>
+        <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--p-text);">${items.map(i => `<li style="margin:4px 0;">${esc(i)}</li>`).join('')}</ul>
       </div>`;
     };
-    let html = '';
-    html += renderGroup(tx('event.goal'), goals, { bg: 'rgba(99,102,241,0.1)', border: '#6366f1' });
-    html += renderGroup(tx('event.yellow_card'), yellowCards, { bg: 'rgba(245,158,11,0.1)', border: '#f59e0b' });
-    html += renderGroup(tx('event.red_card'), redCards, { bg: 'rgba(239,68,68,0.1)', border: '#ef4444' });
-    html += renderGroup(tx('event.try'), tries, { bg: 'rgba(16,185,129,0.1)', border: '#10b981' });
-    html += renderGroup(tx('event.conversion'), conversions, { bg: 'rgba(16,185,129,0.07)', border: '#34d399' });
-    html += renderGroup(tx('event.penalty_goal'), penaltyGoals, { bg: 'rgba(251,191,36,0.1)', border: '#fbbf24' });
-    html += renderGroup(tx('event.drop_goal'), dropGoals, { bg: 'rgba(99,102,241,0.07)', border: '#818cf8' });
-    eventsContainer.innerHTML = html || `<p style="text-align:center; color:#94a3b8; font-size:13px;">${tx('popup.no_events')}</p>`;
+    let evHtml = '';
+    evHtml += renderGroup(tx('event.goal'), goals, { bg: 'rgba(99,102,241,0.1)', border: '#6366f1' });
+    evHtml += renderGroup(tx('event.yellow_card'), yellowCards, { bg: 'rgba(245,158,11,0.1)', border: '#f59e0b' });
+    evHtml += renderGroup(tx('event.red_card'), redCards, { bg: 'rgba(239,68,68,0.1)', border: '#ef4444' });
+    evHtml += renderGroup(tx('event.try'), tries, { bg: 'rgba(16,185,129,0.1)', border: '#10b981' });
+    evHtml += renderGroup(tx('event.conversion'), conversions, { bg: 'rgba(16,185,129,0.07)', border: '#34d399' });
+    evHtml += renderGroup(tx('event.penalty_goal'), penaltyGoals, { bg: 'rgba(251,191,36,0.1)', border: '#fbbf24' });
+    evHtml += renderGroup(tx('event.drop_goal'), dropGoals, { bg: 'rgba(99,102,241,0.07)', border: '#818cf8' });
+    eventsContainer.innerHTML = evHtml || `<p style="text-align:center;color:var(--p-sub);font-size:13px;">${esc(tx('popup.no_events'))}</p>`;
   }
 
   static get styles() {

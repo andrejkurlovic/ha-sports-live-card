@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
+import { openModal, closeModal } from "../../modal-helper.js";
 
 // Helper per generare un range inclusivo
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
@@ -161,32 +162,24 @@ class SportsLiveStandingsCard extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
-
+    closeModal('sports-live-standings-popup');
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
-      this._eventSubscriptions.forEach(unsub => {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
-      });
+      this._eventSubscriptions.forEach(unsub => { if (typeof unsub === 'function') unsub(); });
       this._eventSubscriptions = [];
     }
   }
 
   _subscribeToEvents() {
-    if (!this.hass || !this.hass.connection) return;
-
+    if (!this.hass?.connection) return;
     this._eventSubscriptions = [];
-
-    // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
+    // Standings toasts are secondary. Try custom events; if refused (restricted
+    // user), catch silently — the standings table works without event subscriptions.
     ['sports_live_score', 'sports_live_discipline', 'sports_live_match_finished'].forEach(evt => {
       this.hass.connection.subscribeEvents(
-        this._handleSportsLiveEvent.bind(this),
-        evt
+        this._handleSportsLiveEvent.bind(this), evt,
       ).then(unsub => {
-        if (typeof unsub === 'function') {
-          this._eventSubscriptions.push(unsub);
-        }
-      });
+        if (typeof unsub === 'function') this._eventSubscriptions.push(unsub);
+      }).catch(() => {});
     });
   }
 
@@ -254,24 +247,8 @@ class SportsLiveStandingsCard extends LitElement {
 
   _renderTeamPopupToBody() {
     if (!this.showPopup || !this.activeTeam) {
-      const existing = document.getElementById('sports-live-standings-popup');
-      if (existing) existing.remove();
+      closeModal('sports-live-standings-popup');
       return;
-    }
-    let popup = document.getElementById('sports-live-standings-popup');
-    if (!popup) {
-      popup = document.createElement('div');
-      popup.id = 'sports-live-standings-popup';
-      popup.style.cssText = `
-        position:fixed; inset:0;
-        display:flex; justify-content:center; align-items:center;
-        z-index:999999;
-        background:rgba(0,0,0,0.7);
-        backdrop-filter:blur(8px);
-        overflow:auto;
-      `;
-      popup.addEventListener('click', (e) => { if (e.target === popup) this.showPopup = false; });
-      document.body.appendChild(popup);
     }
 
     const t = this.activeTeam;
@@ -280,13 +257,8 @@ class SportsLiveStandingsCard extends LitElement {
     const isUS = ['nba', 'nhl', 'mlb', 'nfl'].includes(sport);
     const num = (v) => { const n = parseInt(String(v ?? '').replace('+', ''), 10); return isNaN(n) ? null : n; };
 
-    // Skin-aware palette (popup lives outside the card's shadow DOM).
     const isLight = resolveSkin(this._config) === 'light';
-    popup.style.setProperty('--p-bg', isLight ? '#ffffff' : '#1a1f2e');
-    popup.style.setProperty('--p-panel', isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)');
-    popup.style.setProperty('--p-text', isLight ? '#14182a' : '#f8fafc');
-    popup.style.setProperty('--p-sub', isLight ? '#5b6577' : '#94a3b8');
-    popup.style.setProperty('--p-border', isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.08)');
+    const popup = openModal('sports-live-standings-popup', isLight, () => { this.showPopup = false; });
 
     const w = num(t.wins); const d = num(t.draws); const l = num(t.losses);
     const played = (w !== null && l !== null) ? w + (d || 0) + l : null;
@@ -359,7 +331,7 @@ class SportsLiveStandingsCard extends LitElement {
         <button id="standings-popup-close" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:4px;font-weight:800;width:100%;font-size:14px;">${tx('generic.close')}</button>
       </div>`;
 
-    popup.querySelector('#standings-popup-close').addEventListener('click', () => { this.showPopup = false; });
+    popup.querySelector('#standings-popup-close').onclick = () => { this.showPopup = false; };
   }
 
   getCardSize() { return 5; }

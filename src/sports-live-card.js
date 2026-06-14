@@ -1,7 +1,7 @@
-import "./cards/Classifica/sports-live-classifica.js";
-import "./cards/Classifica/sports-live-classifica-editor.js";
-import "./cards/Tutte/sports-live-matches.js";
-import "./cards/Tutte/sports-live-matches-editor.js";
+import "./cards/Standings/sports-live-classifica.js";
+import "./cards/Standings/sports-live-classifica-editor.js";
+import "./cards/Matches/sports-live-matches.js";
+import "./cards/Matches/sports-live-matches-editor.js";
 import "./cards/Team/sports-live-team.js";
 import "./cards/Team/sports-live-team-editor.js";
 import "./cards/News/sports-live-news.js";

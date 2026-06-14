@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
+import { openModal, closeModal, esc } from "../../modal-helper.js";
 
 class SportsLiveTeamNextCard extends LitElement {
   static get properties() {
@@ -86,34 +87,65 @@ class SportsLiveTeamNextCard extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     if (this._clockTick) { clearInterval(this._clockTick); this._clockTick = null; }
-
+    // Remove body-level popup if the card is torn down while it is open.
+    closeModal('sports-live-team-popup');
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
-      this._eventSubscriptions.forEach(unsub => {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
-      });
+      this._eventSubscriptions.forEach(unsub => { if (typeof unsub === 'function') unsub(); });
       this._eventSubscriptions = [];
     }
   }
 
   _subscribeToEvents() {
-    if (!this.hass || !this.hass.connection) return;
-
+    if (!this.hass?.connection) return;
     this._eventSubscriptions = [];
+    let fallbackScheduled = false;
 
-    // Canonical events are fired by the backend for ALL sports (the legacy
-    // calcio_live_* aliases are soccer-only and kept for user automations).
-    ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
+    // Attempt to subscribe to canonical backend events (require full/admin permissions
+    // in HA 2024.4+). If HA refuses (restricted user / kitchen-ha context), fall back
+    // to detecting score changes via the always-allowed state_changed event.
+    const tryCustomSub = (eventType) => {
       this.hass.connection.subscribeEvents(
-        this._handleSportsLiveEvent.bind(this),
-        evt
+        this._handleSportsLiveEvent.bind(this), eventType,
       ).then(unsub => {
-        if (typeof unsub === 'function') {
-          this._eventSubscriptions.push(unsub);
+        if (typeof unsub === 'function') this._eventSubscriptions.push(unsub);
+      }).catch(() => {
+        if (!fallbackScheduled) {
+          fallbackScheduled = true;
+          this._setupStateChangedFallback();
         }
       });
-    });
+    };
+
+    // Canonical events fired for ALL sports.
+    tryCustomSub('sports_live_score');
+    tryCustomSub('sports_live_discipline');
+  }
+
+  // Subscribe to state_changed on the tracked entity and synthesise score
+  // events from attribute diffs. Used when custom event subscriptions are
+  // refused (non-admin HA users). Toasts/confetti still fire; player name
+  // will show as N/A since it is only carried in the custom event payload.
+  _setupStateChangedFallback() {
+    if (!this.hass?.connection) return;
+    this.hass.connection.subscribeEvents((event) => {
+      if (event.data.entity_id !== this._config?.entity) return;
+      const newM = event.data.new_state?.attributes?.matches?.[0];
+      const oldM = event.data.old_state?.attributes?.matches?.[0];
+      if (!newM || !oldM || newM.state !== 'in') return;
+      const base = {
+        home_team: newM.home_team, away_team: newM.away_team,
+        home_score: newM.home_score, away_score: newM.away_score,
+        player: 'N/A', score_event_label: null,
+      };
+      if (String(newM.home_score) !== String(oldM.home_score)) {
+        this._handleSportsLiveEvent({ event_type: 'sports_live_score', data: { ...base, team: newM.home_team } });
+      }
+      if (String(newM.away_score) !== String(oldM.away_score)) {
+        this._handleSportsLiveEvent({ event_type: 'sports_live_score', data: { ...base, team: newM.away_team } });
+      }
+    }, 'state_changed')
+      .then(unsub => { if (typeof unsub === 'function') this._eventSubscriptions.push(unsub); })
+      .catch(() => {});
   }
 
   _eventBelongsToThisCard(eventData) {
@@ -606,41 +638,18 @@ class SportsLiveTeamNextCard extends LitElement {
 
   renderPopupToBody() {
     if (!this.showPopup || !this.activeMatch) {
-      const existingPopup = document.getElementById('sports-live-team-popup');
-      if (existingPopup) existingPopup.remove();
+      closeModal('sports-live-team-popup');
       return;
-    }
-
-    let popupContainer = document.getElementById('sports-live-team-popup');
-    if (!popupContainer) {
-      popupContainer = document.createElement('div');
-      popupContainer.id = 'sports-live-team-popup';
-      popupContainer.style.cssText = `
-        position: fixed; inset: 0;
-        display: flex; justify-content: center; align-items: center;
-        z-index: 999999;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(8px);
-        overflow: auto;
-      `;
-      popupContainer.addEventListener('click', (e) => {
-        if (e.target === popupContainer) this.showPopup = false;
-      });
-      document.body.appendChild(popupContainer);
     }
 
     const m = this.activeMatch;
     const tx = (k) => this._t(k);
-
-    // Skin-aware palette. The popup is appended to document.body (outside the
-    // card's shadow DOM), so the card's --cl-* vars don't reach it; we set our
-    // own custom properties on the container and reference them via var().
     const isLight = resolveSkin(this._config) === 'light';
-    popupContainer.style.setProperty('--p-bg', isLight ? '#ffffff' : '#1a1f2e');
-    popupContainer.style.setProperty('--p-panel', isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)');
-    popupContainer.style.setProperty('--p-text', isLight ? '#14182a' : '#f8fafc');
-    popupContainer.style.setProperty('--p-sub', isLight ? '#5b6577' : '#94a3b8');
-    popupContainer.style.setProperty('--p-border', isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.08)');
+    // openModal creates the overlay if absent, re-binds Escape + outside-click,
+    // and applies skin vars. Returns the overlay element.
+    const popupContainer = openModal(
+      'sports-live-team-popup', isLight, () => { this.showPopup = false; },
+    );
 
     // Soccer exposes possession/shots stats; other sports use summary leaders.
     const hs = m.home_statistics || {};
@@ -660,24 +669,24 @@ class SportsLiveTeamNextCard extends LitElement {
         </div>` : '';
 
     popupContainer.innerHTML = `
-      <div style="background: var(--p-bg); padding: 24px; border-radius: 20px; width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto; border: 1px solid var(--p-border); box-shadow: 0 24px 64px rgba(0,0,0,0.6); margin: auto; color: var(--p-text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">
-        <h3 style="margin:0 0 20px; font-size: 22px; font-weight: 800; letter-spacing:-0.02em; background: linear-gradient(135deg,#6366f1,#ec4899); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color: transparent;">${tx('popup.match_details')}</h3>
-        <div style="display:flex; justify-content:center; align-items:center; gap:18px; margin-bottom:24px;">
-          <img style="width:72px; height:72px; object-fit:contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${m.home_logo}" alt="${m.home_team}" />
+      <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
+        <h3 style="margin:0 0 20px;font-size:22px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${esc(tx('popup.match_details'))}</h3>
+        <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:24px;">
+          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(m.home_logo)}" alt="${esc(m.home_team)}" />
           <div style="text-align:center;">
-            <div style="font-size:42px; font-weight:900; letter-spacing:-0.04em; line-height:1;">${m.home_score ?? '-'} <span style="opacity:0.4;">-</span> ${m.away_score ?? '-'}</div>
-            <div style="font-size:12px; color:var(--p-sub); margin-top:8px; font-weight:600;">${m.clock ?? m.status ?? ''}</div>
+            <div style="font-size:42px;font-weight:900;letter-spacing:-0.04em;line-height:1;">${esc(m.home_score ?? '-')} <span style="opacity:0.4;">-</span> ${esc(m.away_score ?? '-')}</div>
+            <div style="font-size:12px;color:var(--p-sub);margin-top:8px;font-weight:600;">${esc(m.clock ?? m.status ?? '')}</div>
           </div>
-          <img style="width:72px; height:72px; object-fit:contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${m.away_logo}" alt="${m.away_team}" />
+          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(m.away_logo)}" alt="${esc(m.away_team)}" />
         </div>
         ${statsGrid}
         <div id="team-events-container"></div>
-        <button id="popup-close-btn" style="background:linear-gradient(135deg,#6366f1,#ec4899); color:white; padding:12px 20px; border:none; border-radius:12px; cursor:pointer; margin-top:20px; font-weight:800; width:100%; font-size:14px;">${tx('generic.close')}</button>
+        <button id="popup-close-btn" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:20px;font-weight:800;width:100%;font-size:14px;">${esc(tx('generic.close'))}</button>
       </div>
     `;
 
     const closeBtn = popupContainer.querySelector('#popup-close-btn');
-    if (closeBtn) closeBtn.addEventListener('click', () => { this.showPopup = false; });
+    if (closeBtn) closeBtn.onclick = () => { this.showPopup = false; };
 
     const eventsContainer = popupContainer.querySelector('#team-events-container');
     const { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals } = this.separateEvents(m.match_details || []);
