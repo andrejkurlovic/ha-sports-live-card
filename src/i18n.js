@@ -345,6 +345,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Cartellino rosso',
     'event.substitution': 'Sostituzione',
     'event.var': 'VAR',
+    'event.header': 'Colpo di testa',
+    'event.shot': 'Tiro',
+    'event.penalty': 'Rigore',
+    'event.free_kick': 'Calcio di punizione',
     'event.try': 'Meta',
     'event.conversion': 'Trasformazione',
     'event.penalty_goal': 'Calcio Piazzato',
@@ -391,6 +395,10 @@ const TRANSLATIONS = {
     'news.empty': 'Nessuna notizia disponibile',
     'news.articles': '{n} articoli',
 
+    'phase.regular_season': 'Stagione regolare',
+    'phase.group_stage': 'Fase a gironi',
+    'phase.playoffs': 'Playoff',
+
     'zone.champions': 'Champions',
     'zone.europa': 'Europa',
     'zone.conference': 'Conference League',
@@ -425,6 +433,7 @@ const TRANSLATIONS = {
     'generic.matches_count': '{n} partite',
     'generic.unknown_entity': 'Entità sconosciuta',
     'generic.close': 'Chiudi',
+    'generic.unknown': 'Sconosciuto',
 
     'popup.match_details': 'Dettagli partita',
     'popup.lineups': 'Formazioni',
@@ -477,6 +486,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Carton rouge',
     'event.substitution': 'Remplacement',
     'event.var': 'VAR',
+    'event.header': 'Tête',
+    'event.shot': 'Tir',
+    'event.penalty': 'Penalty',
+    'event.free_kick': 'Coup franc',
     'event.try': 'Essai',
     'event.conversion': 'Transformation',
     'event.penalty_goal': 'Pénalité',
@@ -523,6 +536,10 @@ const TRANSLATIONS = {
     'news.empty': 'Aucune actualité disponible',
     'news.articles': '{n} articles',
 
+    'phase.regular_season': 'Saison régulière',
+    'phase.group_stage': 'Phase de groupes',
+    'phase.playoffs': 'Éliminatoires',
+
     'zone.champions': 'Champions',
     'zone.europa': 'Europa',
     'zone.relegation': 'Relégation',
@@ -556,6 +573,7 @@ const TRANSLATIONS = {
     'generic.matches_count': '{n} matchs',
     'generic.unknown_entity': 'Entité inconnue',
     'generic.close': 'Fermer',
+    'generic.unknown': 'Inconnu',
 
     'popup.match_details': 'Détails du match',
     'popup.lineups': 'Compositions',
@@ -608,6 +626,10 @@ const TRANSLATIONS = {
     'event.red_card': 'Tarjeta roja',
     'event.substitution': 'Sustitución',
     'event.var': 'VAR',
+    'event.header': 'Cabezazo',
+    'event.shot': 'Disparo',
+    'event.penalty': 'Penalti',
+    'event.free_kick': 'Falta directa',
     'event.try': 'Ensayo',
     'event.conversion': 'Conversión',
     'event.penalty_goal': 'Gol de Penalti',
@@ -654,6 +676,10 @@ const TRANSLATIONS = {
     'news.empty': 'No hay noticias disponibles',
     'news.articles': '{n} artículos',
 
+    'phase.regular_season': 'Temporada regular',
+    'phase.group_stage': 'Fase de grupos',
+    'phase.playoffs': 'Eliminatorias',
+
     'zone.champions': 'Champions',
     'zone.europa': 'Europa',
     'zone.relegation': 'Descenso',
@@ -687,6 +713,7 @@ const TRANSLATIONS = {
     'generic.matches_count': '{n} partidos',
     'generic.unknown_entity': 'Entidad desconocida',
     'generic.close': 'Cerrar',
+    'generic.unknown': 'Desconocido',
 
     'popup.match_details': 'Detalles del partido',
     'popup.lineups': 'Alineaciones',

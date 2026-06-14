@@ -693,8 +693,8 @@ class SportsLiveTeamNextCard extends LitElement {
     const renderGroup = (title, items, color) => {
       if (!items.length) return '';
       return `<div style="margin-bottom:14px; padding:14px; background:${color.bg}; border-left:3px solid ${color.border}; border-radius:10px;">
-        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:${color.border}; font-weight:800;">${title}</h5>
-        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--p-text);">${items.map(i => `<li style="margin:4px 0;">${i}</li>`).join('')}</ul>
+        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:${color.border}; font-weight:800;">${esc(title)}</h5>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--p-text);">${items.map(i => `<li style="margin:4px 0;">${esc(i)}</li>`).join('')}</ul>
       </div>`;
     };
     let eventsHTML = '';
@@ -711,12 +711,12 @@ class SportsLiveTeamNextCard extends LitElement {
     if (scoringPlays.length) {
       const rows = scoringPlays.slice().reverse().slice(0, 12).map(p => `
         <li style="display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:start; padding:5px 0; border-bottom:1px solid var(--p-border); font-size:12px;">
-          <span style="font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums; white-space:nowrap;">${[p.period, p.clock].filter(Boolean).join(' ')}</span>
-          <span style="color:var(--p-text);">${p.text || ''}</span>
-          <span style="font-weight:800; color:var(--p-text); white-space:nowrap; font-variant-numeric:tabular-nums;">${p.home_score ?? ''}-${p.away_score ?? ''}</span>
+          <span style="font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums; white-space:nowrap;">${esc([p.period, p.clock].filter(Boolean).join(' '))}</span>
+          <span style="color:var(--p-text);">${esc(p.text || '')}</span>
+          <span style="font-weight:800; color:var(--p-text); white-space:nowrap; font-variant-numeric:tabular-nums;">${esc(String(p.home_score ?? ''))}-${esc(String(p.away_score ?? ''))}</span>
         </li>`).join('');
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(99,102,241,0.1); border-left:3px solid #6366f1; border-radius:10px;">
-        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#818cf8; font-weight:800;">${tx('popup.scoring_plays')}</h5>
+        <h5 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#818cf8; font-weight:800;">${esc(tx('popup.scoring_plays'))}</h5>
         <ul style="margin:0; padding:0; list-style:none;">${rows}</ul>
       </div>`;
     }
@@ -726,16 +726,16 @@ class SportsLiveTeamNextCard extends LitElement {
     if (statLeaders.length) {
       const teamCol = (tl) => `
         <div style="flex:1; min-width:0;">
-          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--p-sub); font-weight:800; margin-bottom:6px;">${tl.team_name || ''}</div>
-          ${(tl.categories || []).slice(0, 4).map(c => `<div style="font-size:12px; color:var(--p-text); margin:3px 0;"><span style="color:var(--p-sub);">${c.display_name}:</span> ${c.short_name || c.athlete} <strong>${c.value}</strong></div>`).join('')}
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--p-sub); font-weight:800; margin-bottom:6px;">${esc(tl.team_name || '')}</div>
+          ${(tl.categories || []).slice(0, 4).map(c => `<div style="font-size:12px; color:var(--p-text); margin:3px 0;"><span style="color:var(--p-sub);">${esc(c.display_name)}:</span> ${esc(c.short_name || c.athlete)} <strong>${esc(String(c.value))}</strong></div>`).join('')}
         </div>`;
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(251,191,36,0.08); border-left:3px solid #fbbf24; border-radius:10px;">
-        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${tx('popup.stat_leaders')}</h5>
+        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${esc(tx('popup.stat_leaders'))}</h5>
         <div style="display:flex; gap:16px;">${statLeaders.slice(0, 2).map(teamCol).join('')}</div>
       </div>`;
     }
 
-    // Lineup (se disponibile dal sensor team_match arricchito con summary)
+    // Lineup
     const lineupHome = m.lineup_home || [];
     const lineupAway = m.lineup_away || [];
     if (lineupHome.length || lineupAway.length) {
@@ -746,16 +746,16 @@ class SportsLiveTeamNextCard extends LitElement {
         if (!starters.length) return '';
         return `<div style="margin-bottom:8px;">
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-size:12px; font-weight:800; color:var(--p-text);">${label}</span>
-            ${formation ? `<span style="font-size:10px; font-weight:700; color:#6366f1; letter-spacing:0.1em;">${formation}</span>` : ''}
+            <span style="font-size:12px; font-weight:800; color:var(--p-text);">${esc(label)}</span>
+            ${formation ? `<span style="font-size:10px; font-weight:700; color:#6366f1; letter-spacing:0.1em;">${esc(formation)}</span>` : ''}
           </div>
           <div style="font-size:12px; color:var(--p-text); line-height:1.7;">
-            ${starters.map(p => `<span style="display:inline-block; padding:2px 8px; background:var(--p-panel); border-radius:6px; margin:2px;">${p.jersey ? `<strong style="color:#fbbf24;">${p.jersey}</strong> ` : ''}${p.short_name || p.name}</span>`).join('')}
+            ${starters.map(p => `<span style="display:inline-block; padding:2px 8px; background:var(--p-panel); border-radius:6px; margin:2px;">${p.jersey ? `<strong style="color:#fbbf24;">${esc(String(p.jersey))}</strong> ` : ''}${esc(p.short_name || p.name)}</span>`).join('')}
           </div>
         </div>`;
       };
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(16,185,129,0.08); border-left:3px solid #10b981; border-radius:10px;">
-        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#10b981; font-weight:800;">${tx('popup.lineups')}</h5>
+        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#10b981; font-weight:800;">${esc(tx('popup.lineups'))}</h5>
         ${renderLineup(lineupHome, fH, m.home_team)}
         ${renderLineup(lineupAway, fA, m.away_team)}
       </div>`;
@@ -777,12 +777,12 @@ class SportsLiveTeamNextCard extends LitElement {
         return '·';
       };
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(251,191,36,0.08); border-left:3px solid #fbbf24; border-radius:10px;">
-        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${tx('popup.timeline')}</h5>
+        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#fbbf24; font-weight:800;">${esc(tx('popup.timeline'))}</h5>
         <ul style="margin:0; padding:0; list-style:none;">
           ${keyEvents.map(e => `<li style="display:grid; grid-template-columns:36px 24px 1fr; gap:8px; align-items:start; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:var(--p-text);">
-            <span style="text-align:right; font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums;">${e.clock || ''}</span>
+            <span style="text-align:right; font-weight:700; color:var(--p-sub); font-variant-numeric:tabular-nums;">${esc(e.clock || '')}</span>
             <span style="text-align:center;">${iconOf(e)}</span>
-            <span><strong style="color:var(--p-text);">${(e.athletes||[]).filter(Boolean).join(', ') || e.type_text || ''}</strong>${e.team ? `<br><span style="color:var(--p-sub); font-size:11px;">${e.team}</span>` : ''}</span>
+            <span><strong style="color:var(--p-text);">${esc((e.athletes||[]).filter(Boolean).join(', ') || e.type_text || '')}</strong>${e.team ? `<br><span style="color:var(--p-sub); font-size:11px;">${esc(e.team)}</span>` : ''}</span>
           </li>`).join('')}
         </ul>
       </div>`;
@@ -792,20 +792,20 @@ class SportsLiveTeamNextCard extends LitElement {
     const h2h = m.head_to_head || [];
     if (h2h.length) {
       eventsHTML += `<div style="margin-bottom:14px; padding:14px; background:rgba(99,102,241,0.08); border-left:3px solid #6366f1; border-radius:10px;">
-        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#6366f1; font-weight:800;">${tx('popup.h2h')} (${h2h.length})</h5>
+        <h5 style="margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#6366f1; font-weight:800;">${esc(tx('popup.h2h'))} (${h2h.length})</h5>
         <ul style="margin:0; padding:0; list-style:none;">
           ${h2h.slice(0, 8).map(g => {
             const dt = g.date ? new Date(g.date).toLocaleDateString(resolveLang(this.hass, this._config)) : '';
             return `<li style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:var(--p-text);">
-              <span>${g.home_team} <strong>${g.home_score ?? '-'}</strong> - <strong>${g.away_score ?? '-'}</strong> ${g.away_team}</span>
-              <span style="color:var(--p-sub);">${dt}</span>
+              <span>${esc(g.home_team)} <strong>${esc(String(g.home_score ?? '-'))}</strong> - <strong>${esc(String(g.away_score ?? '-'))}</strong> ${esc(g.away_team)}</span>
+              <span style="color:var(--p-sub);">${esc(dt)}</span>
             </li>`;
           }).join('')}
         </ul>
       </div>`;
     }
 
-    eventsContainer.innerHTML = eventsHTML || `<p style="text-align:center; color:var(--p-sub); font-size:13px;">${tx('popup.no_events')}</p>`;
+    eventsContainer.innerHTML = eventsHTML || `<p style="text-align:center; color:var(--p-sub); font-size:13px;">${esc(tx('popup.no_events'))}</p>`;
   }
 
   static get styles() {

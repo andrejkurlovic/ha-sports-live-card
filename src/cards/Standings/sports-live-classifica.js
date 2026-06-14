@@ -590,7 +590,14 @@ class SportsLiveStandingsCard extends LitElement {
     if (sport === 'nba' || sport === 'mlb' || sport === 'nfl') {
       return [{ key: 'record', label: 'col.wins' }, { key: 'win_pct', label: 'col.pct', cls: 'points-cell' }];
     }
-    return [{ key: 'gd', label: 'col.gd' }, { key: 'points', label: 'col.points', cls: 'points-cell' }];
+    // Soccer / rugby: show W/D/L/Pts so group-stage tables (World Cup, UEFA, Copa)
+    // have the same essential info as the full single-group table.
+    return [
+      { key: 'wins',   label: 'col.wins' },
+      { key: 'draws',  label: 'col.draws' },
+      { key: 'losses', label: 'col.losses' },
+      { key: 'points', label: 'col.points', cls: 'points-cell' },
+    ];
   }
 
   /** Resolve a column descriptor to {value, cls} for a team row. */
