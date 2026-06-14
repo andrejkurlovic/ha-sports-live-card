@@ -409,46 +409,80 @@ class SportsLiveTeamNextCard extends LitElement {
   }
 
   _renderStatsRow(match) {
+    const sport = this.hass?.states?.[this._config?.entity]?.attributes?.sport || '';
     const hs = match.home_statistics || {};
-    const as = match.away_statistics || {};
-    const stats = [];
-    const num = v => {
-      const n = parseFloat(v);
-      return isNaN(n) ? null : n;
-    };
-    const pushStat = (label, hKey, aKey, suffix = '') => {
-      const h = num(hs[hKey]);
-      const a = num(as[aKey]);
-      if (h === null || a === null) return;
-      stats.push({ label, home: hs[hKey], away: as[aKey], hNum: h, aNum: a, suffix });
-    };
-    pushStat(this._t('team.possession'), 'possessionPct', 'possessionPct', '%');
-    pushStat(this._t('team.shots'), 'totalShots', 'totalShots');
-    pushStat(this._t('team.on_target'), 'shotsOnTarget', 'shotsOnTarget');
-    if (stats.length === 0) return '';
+    const as_ = match.away_statistics || {};
+    const bars = [];
 
-    return html`
-      <div class="stats-row">
-        ${stats.map(s => {
-          const total = s.hNum + s.aNum;
-          const homePct = total > 0 ? (s.hNum / total) * 100 : 50;
-          const awayPct = 100 - homePct;
-          return html`
-            <div class="stat-bar">
-              <div class="stat-bar-label">
-                <span class="home-val">${s.home}${s.suffix}</span>
-                <span class="label-text">${s.label}</span>
-                <span class="away-val">${s.away}${s.suffix}</span>
-              </div>
-              <div class="stat-bar-track">
-                <div class="stat-bar-home" style="width: ${homePct}%;"></div>
-                <div class="stat-bar-away" style="width: ${awayPct}%;"></div>
-              </div>
-            </div>
-          `;
-        })}
-      </div>
-    `;
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+    const addBar = (label, hVal, aVal, suffix = '') => {
+      const h = num(hVal); const a = num(aVal);
+      if (h === null || a === null) return;
+      const total = h + a;
+      const hp = total > 0 ? (h / total) * 100 : 50;
+      bars.push(html`
+        <div class="stat-bar">
+          <div class="stat-bar-label">
+            <span class="home-val">${hVal}${suffix}</span>
+            <span class="label-text">${label}</span>
+            <span class="away-val">${aVal}${suffix}</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-home" style="width: ${hp.toFixed(1)}%;"></div>
+            <div class="stat-bar-away" style="width: ${(100 - hp).toFixed(1)}%;"></div>
+          </div>
+        </div>
+      `);
+    };
+
+    // Soccer / rugby: possession, shots, on-target from match statistics dict
+    if (!sport || sport === 'soccer' || sport === 'rugby') {
+      addBar(this._t('team.possession'), hs.possessionPct, as_.possessionPct, '%');
+      addBar(this._t('team.shots'), hs.totalShots, as_.totalShots);
+      addBar(this._t('team.on_target'), hs.shotsOnTarget, as_.shotsOnTarget);
+    }
+
+    // Win probability — all sports where summary enrichment is available.
+    // Stored as 0-100 float (already percentage) in the match dict.
+    const hwp = num(match.home_win_probability);
+    const awp = num(match.away_win_probability);
+    if (hwp !== null && awp !== null && hwp + awp > 0) {
+      bars.push(html`
+        <div class="stat-bar">
+          <div class="stat-bar-label">
+            <span class="home-val">${Math.round(hwp)}%</span>
+            <span class="label-text">${this._t('team.win_prob')}</span>
+            <span class="away-val">${Math.round(awp)}%</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-home" style="width: ${hwp.toFixed(1)}%;"></div>
+            <div class="stat-bar-away" style="width: ${awp.toFixed(1)}%;"></div>
+          </div>
+        </div>
+      `);
+    }
+
+    // NFL / CFL: remaining timeouts per team (3 max per half).
+    const hto = parseInt(match.home_timeouts, 10);
+    const ato = parseInt(match.away_timeouts, 10);
+    if (!isNaN(hto) && !isNaN(ato)) {
+      const dots = (n, side) => Array.from({ length: 3 }, (_, i) =>
+        html`<span class="timeout-dot ${side} ${i < n ? 'active' : 'spent'}"></span>`
+      );
+      bars.push(html`
+        <div class="stat-bar stat-bar-timeouts">
+          <div class="stat-bar-label">
+            <span class="home-val timeout-dots">${dots(hto, 'home')}</span>
+            <span class="label-text">${this._t('team.timeouts')}</span>
+            <span class="away-val timeout-dots">${dots(ato, 'away')}</span>
+          </div>
+        </div>
+      `);
+    }
+
+    if (bars.length === 0) return '';
+    return html`<div class="stats-row">${bars}</div>`;
   }
 
   render() {
@@ -1156,6 +1190,26 @@ class SportsLiveTeamNextCard extends LitElement {
         border-radius: 0 999px 999px 0;
         transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       }
+
+      .stat-bar-timeouts .stat-bar-label {
+        align-items: center;
+      }
+      .timeout-dots {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+      }
+      .timeout-dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .timeout-dot.home.active { background: var(--cl-accent); box-shadow: 0 0 5px var(--cl-accent); }
+      .timeout-dot.away.active { background: var(--cl-accent-2); box-shadow: 0 0 5px var(--cl-accent-2); }
+      .timeout-dot.spent { background: var(--cl-card-2); border: 1px solid var(--cl-glass-border); }
 
       .meta-row {
         display: flex; justify-content: space-between;
