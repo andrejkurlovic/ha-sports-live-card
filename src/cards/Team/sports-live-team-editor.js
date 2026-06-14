@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class CalcioLiveNewsEditor extends LitElement {
+class SportsLiveTeamNextCardEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -16,19 +16,49 @@ class CalcioLiveNewsEditor extends LitElement {
 
   static get styles() {
     return css`
-      .card-config { display: flex; flex-direction: column; gap: 16px; }
-      .option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-      label { font-size: 14px; color: var(--primary-text-color); }
-      .field-label { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; font-weight: 600; }
-      select, input[type="number"] {
-        width: 100%; padding: 10px 12px; font-size: 14px;
+      .card-config {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      label {
+        font-size: 14px;
+        color: var(--primary-text-color);
+      }
+      .field-label {
+        display: block;
+        font-size: 12px;
+        color: var(--secondary-text-color);
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
         border-radius: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
         background: var(--card-background-color, #fff);
         color: var(--primary-text-color, #000);
         box-sizing: border-box;
       }
-      h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
+      select:focus {
+        outline: 2px solid var(--primary-color, #03a9f4);
+        outline-offset: -1px;
+      }
+      h3 {
+        margin: 8px 0 0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--secondary-text-color);
+      }
     `;
   }
 
@@ -36,6 +66,7 @@ class CalcioLiveNewsEditor extends LitElement {
     if (!config) throw new Error('Invalid configuration');
     this._config = { ...config };
   }
+
   get config() { return this._config; }
 
   updated(changedProperties) {
@@ -45,7 +76,9 @@ class CalcioLiveNewsEditor extends LitElement {
   _fireConfigChanged(newConfig) {
     this._config = newConfig;
     this.dispatchEvent(new CustomEvent('config-changed', {
-      detail: { config: newConfig }, bubbles: true, composed: true,
+      detail: { config: newConfig },
+      bubbles: true,
+      composed: true,
     }));
     this.requestUpdate();
   }
@@ -77,40 +110,32 @@ class CalcioLiveNewsEditor extends LitElement {
     this._fireConfigChanged({ ...this._config, [key]: value });
   }
 
-  _numberChanged(ev) {
-    if (!this._config) return;
-    const target = ev.target;
-    if (!target.dataset || !target.dataset.configValue) return;
-    const key = target.dataset.configValue;
-    const value = parseInt(target.value, 10);
-    if (isNaN(value)) return;
-    if (this._config[key] === value) return;
-    this._fireConfigChanged({ ...this._config, [key]: value });
-  }
-
   _fetchEntities() {
     if (!this.hass) return;
     this.entities = Object.keys(this.hass.states)
       .filter(id => {
         if (!id.startsWith('sensor.')) return false;
         const attrs = this.hass.states[id]?.attributes;
-        return attrs?.sport !== undefined && Array.isArray(attrs?.articles);
+        return attrs?.sport !== undefined && Array.isArray(attrs?.matches);
       })
       .sort();
   }
 
   render() {
     if (!this._config || !this.hass) return html``;
-    const cur = this._config.entity || '';
-    const inList = cur && this.entities.includes(cur);
+    const currentEntity = this._config.entity || '';
+    const entityInList = currentEntity && this.entities.includes(currentEntity);
+
     return html`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
-          <label class="field-label">Entity (news sensor)</label>
+          <label class="field-label">Entity</label>
           <select @change=${this._entityChanged}>
-            ${!inList ? html`<option value="${cur}" selected>${cur || '— select —'}</option>` : ''}
-            ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
+            ${!entityInList ? html`<option value="${currentEntity}" selected>${currentEntity || '— select —'}</option>` : ''}
+            ${this.entities.map(e => html`
+              <option value="${e}" ?selected=${e === currentEntity}>${e}</option>
+            `)}
           </select>
         </div>
 
@@ -124,33 +149,66 @@ class CalcioLiveNewsEditor extends LitElement {
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Hide Images</label>
+          <label>Show Event Toasts (in-card)</label>
           <ha-switch
-            .checked=${this._config.hide_images === true}
-            data-config-value="hide_images"
+            .checked=${this._config.show_event_toasts === true}
+            data-config-value="show_event_toasts"
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Hide Descriptions</label>
+          <label>Hide Venue</label>
           <ha-switch
-            .checked=${this._config.hide_description === true}
-            data-config-value="hide_description"
+            .checked=${this._config.hide_venue === true}
+            data-config-value="hide_venue"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide Form Badges</label>
+          <ha-switch
+            .checked=${this._config.hide_form === true}
+            data-config-value="hide_form"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide W/D/L Records</label>
+          <ha-switch
+            .checked=${this._config.hide_records === true}
+            data-config-value="hide_records"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+        <div class="option">
+          <label>Hide Top Scorer</label>
+          <ha-switch
+            .checked=${this._config.hide_top_scorer === true}
+            data-config-value="hide_top_scorer"
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
         <div>
-          <label class="field-label">Max Articles</label>
-          <input type="number" min="1" max="20"
-            .value=${this._config.max_articles || 5}
-            data-config-value="max_articles"
-            @change=${this._numberChanged} />
+          <label class="field-label">TV Broadcast Region</label>
+          <select data-config-value="broadcast_region" @change=${this._selectChanged}>
+            <option value="uk" ?selected=${(this._config.broadcast_region || 'uk') === 'uk'}>UK (default)</option>
+            <option value="us" ?selected=${this._config.broadcast_region === 'us'}>US</option>
+            <option value="both" ?selected=${this._config.broadcast_region === 'both'}>Both</option>
+          </select>
         </div>
         <div>
           <label class="field-label">Skin</label>
           <select data-config-value="skin" @change=${this._selectChanged}>
             <option value="dark" ?selected=${(this._config.skin || 'dark') === 'dark'}>Dark</option>
             <option value="light" ?selected=${this._config.skin === 'light'}>Light</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Score Size</label>
+          <select data-config-value="score_size" @change=${this._selectChanged}>
+            <option value="normal" ?selected=${(this._config.score_size || 'normal') === 'normal'}>Normal</option>
+            <option value="big" ?selected=${this._config.score_size === 'big'}>Big</option>
+            <option value="huge" ?selected=${this._config.score_size === 'huge'}>Huge</option>
           </select>
         </div>
         <div>
@@ -169,4 +227,4 @@ class CalcioLiveNewsEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-news-editor', CalcioLiveNewsEditor);
+customElements.define('sports-live-team-editor', SportsLiveTeamNextCardEditor);

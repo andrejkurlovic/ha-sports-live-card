@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
-import { skinStyles, applySkin } from "../../skins.js";
+import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 
 // Helper per generare un range inclusivo
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
@@ -113,7 +113,7 @@ const ZONE_PRESETS = {
   },
 };
 
-class CalcioLiveStandingsCard extends LitElement {
+class SportsLiveStandingsCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -180,7 +180,7 @@ class CalcioLiveStandingsCard extends LitElement {
     // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
     ['sports_live_score', 'sports_live_discipline', 'sports_live_match_finished'].forEach(evt => {
       this.hass.connection.subscribeEvents(
-        this._handleCalcioLiveEvent.bind(this),
+        this._handleSportsLiveEvent.bind(this),
         evt
       ).then(unsub => {
         if (typeof unsub === 'function') {
@@ -199,7 +199,7 @@ class CalcioLiveStandingsCard extends LitElement {
     return entityId.toLowerCase().includes(normalized);
   }
 
-  _handleCalcioLiveEvent(event) {
+  _handleSportsLiveEvent(event) {
     const eventType = event.event_type;
     const eventData = event.data;
     if (!this._eventBelongsToThisCard(eventData)) return;
@@ -276,18 +276,61 @@ class CalcioLiveStandingsCard extends LitElement {
 
     const t = this.activeTeam;
     const tx = (k) => this._t(k);
+    const sport = this._sport();
+    const isUS = ['nba', 'nhl', 'mlb', 'nfl'].includes(sport);
     const num = (v) => { const n = parseInt(String(v ?? '').replace('+', ''), 10); return isNaN(n) ? null : n; };
+
+    // Skin-aware palette (popup lives outside the card's shadow DOM).
+    const isLight = resolveSkin(this._config) === 'light';
+    popup.style.setProperty('--p-bg', isLight ? '#ffffff' : '#1a1f2e');
+    popup.style.setProperty('--p-panel', isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)');
+    popup.style.setProperty('--p-text', isLight ? '#14182a' : '#f8fafc');
+    popup.style.setProperty('--p-sub', isLight ? '#5b6577' : '#94a3b8');
+    popup.style.setProperty('--p-border', isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.08)');
+
     const w = num(t.wins); const d = num(t.draws); const l = num(t.losses);
-    const played = (w !== null && d !== null && l !== null) ? w + d + l : null;
+    const played = (w !== null && l !== null) ? w + (d || 0) + l : null;
     const gd = num(t.goal_difference);
     const gdLabel = gd === null ? '—' : (gd > 0 ? `+${gd}` : `${gd}`);
-    const gdColor = gd === null ? '#94a3b8' : (gd > 0 ? '#10b981' : gd < 0 ? '#ef4444' : '#94a3b8');
+    const gdColor = gd === null ? 'var(--p-sub)' : (gd > 0 ? '#10b981' : gd < 0 ? '#ef4444' : 'var(--p-sub)');
+    const clean = (v) => (v === null || v === undefined || v === '' || v === 'N/A') ? null : v;
 
-    const statBox = (label, val, color = '#f8fafc') =>
-      `<div style="background:rgba(255,255,255,0.04);padding:12px 8px;border-radius:12px;text-align:center;">
+    const statBox = (label, val, color = 'var(--p-text)') =>
+      `<div style="background:var(--p-panel);padding:12px 8px;border-radius:12px;text-align:center;">
         <div style="font-size:18px;font-weight:900;color:${color};font-variant-numeric:tabular-nums;">${val ?? '—'}</div>
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-top:3px;">${label}</div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--p-sub);margin-top:3px;">${label}</div>
       </div>`;
+
+    // Sport-aware stat grids.
+    let statGrids;
+    if (isUS) {
+      const seedLine = clean(t.playoff_seed) ? `<div style="font-size:11px;font-weight:700;color:var(--p-sub);margin-top:2px;">Seed #${t.playoff_seed}</div>` : '';
+      statGrids = `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.wins'), w, '#10b981')}
+          ${statBox(tx('col.losses'), l, '#ef4444')}
+          ${statBox(sport === 'nhl' ? tx('col.otl') : tx('col.pct'), sport === 'nhl' ? clean(t.ot_losses) : clean(t.win_pct))}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.gb'), clean(t.games_behind))}
+          ${statBox(tx('col.streak'), clean(t.streak))}
+          ${statBox(sport === 'nhl' ? tx('col.points') : tx('col.gd'), sport === 'nhl' ? clean(t.points) : (gd === null ? null : gdLabel), gdColor)}
+        </div>
+        ${seedLine}`;
+    } else {
+      statGrids = `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.played'), played)}
+          ${statBox(tx('col.wins'), w, '#10b981')}
+          ${statBox(tx('col.draws'), d, '#f59e0b')}
+          ${statBox(tx('col.losses'), l, '#ef4444')}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
+          ${statBox(tx('col.gf'), clean(t.goals_for))}
+          ${statBox(tx('col.ga'), clean(t.goals_against))}
+          ${statBox(tx('col.gd'), gdLabel, gdColor)}
+        </div>`;
+    }
 
     const formStr = String(t.form || '').replace(/[^WLDwld]/g, '').toUpperCase().slice(-5);
     const pillColor = { W: '#10b981', L: '#ef4444', D: '#f59e0b' };
@@ -296,30 +339,20 @@ class CalcioLiveStandingsCard extends LitElement {
     ).join('') : '';
 
     popup.innerHTML = `
-      <div style="background:#1a1f2e;padding:24px;border-radius:20px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
+      <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
           ${t.team_logo ? `<img src="${t.team_logo}" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />` : ''}
           <div>
             <div style="font-size:20px;font-weight:900;letter-spacing:-0.02em;">${t.team_name}</div>
-            <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px;">${tx('col.pos')} #${t.rank} · ${t.points ?? '—'} ${tx('col.points')}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--p-sub);margin-top:4px;">${tx('col.pos')} #${t.rank} · ${t.points ?? '—'} ${tx('col.points')}</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;">
-          ${statBox(tx('col.played'), played)}
-          ${statBox(tx('col.wins'), w, '#10b981')}
-          ${statBox(tx('col.draws'), d, '#f59e0b')}
-          ${statBox(tx('col.losses'), l, '#ef4444')}
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;">
-          ${statBox(tx('col.gf'), num(t.goals_for) ?? (num(t.points) !== null ? '—' : null))}
-          ${statBox(tx('col.ga'), num(t.goals_against) ?? null)}
-          ${statBox(tx('col.gd'), gdLabel, gdColor)}
-        </div>
+        ${statGrids}
 
         ${formPills ? `
-        <div style="margin-bottom:18px;padding:14px;background:rgba(255,255,255,0.04);border-radius:12px;">
-          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;margin-bottom:8px;">${tx('team.form')} (${tx('team.last5')})</div>
+        <div style="margin-bottom:18px;padding:14px;background:var(--p-panel);border-radius:12px;">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--p-sub);margin-bottom:8px;">${tx('team.form')} (${tx('team.last5')})</div>
           <div style="display:flex;gap:6px;">${formPills}</div>
         </div>` : ''}
 
@@ -487,6 +520,14 @@ class CalcioLiveStandingsCard extends LitElement {
 
     const seasonName = stateObj.attributes.season || '';
     const standingsGroups = stateObj.attributes.standings_groups || [];
+    const hasAnyRows = standingsGroups.some(g => (g.standings || []).length > 0);
+    if (!hasAnyRows) {
+      return html`<ha-card class="empty">
+        <div class="empty-icon">${this._sportIcon()}</div>
+        <div class="empty-title">${this._t('standings.empty.title')}</div>
+        <div class="empty-sub">${this._t('standings.empty.sub')}</div>
+      </ha-card>`;
+    }
     const showAllGroups = !this.selectedGroup && standingsGroups.length > 1;
     const standingsGroup = this._currentGroup(standingsGroups);
     const filteredStandings = this._sortStandings(standingsGroup ? standingsGroup.standings : [], seasonName);
@@ -519,35 +560,109 @@ class CalcioLiveStandingsCard extends LitElement {
     `;
   }
 
+  // ------------------------------------------------------------------
+  // Sport-aware standings columns
+  // ------------------------------------------------------------------
+
+  _sport() {
+    const stateObj = this.hass && this._config.entity ? this.hass.states[this._config.entity] : null;
+    return stateObj && stateObj.attributes ? String(stateObj.attributes.sport || '') : '';
+  }
+
+  _sportIcon() {
+    const icons = {
+      soccer: '⚽', nfl: '🏈', rugby: '🏉', nba: '🏀',
+      nhl: '🏒', mlb: '⚾', cricket: '🏏', tennis: '🎾', mma: '🥊',
+    };
+    return icons[this._sport()] || '🏆';
+  }
+
+  /** Column descriptors for the full table, keyed off the entry's sport. */
+  _fullColumns() {
+    const sport = this._sport();
+    if (sport === 'nhl') {
+      return [
+        { key: 'wins', label: 'col.wins' },
+        { key: 'losses', label: 'col.losses' },
+        { key: 'ot_losses', label: 'col.otl' },
+        { key: 'streak', label: 'col.streak' },
+        { key: 'points', label: 'col.points', cls: 'points-cell' },
+      ];
+    }
+    if (sport === 'nba' || sport === 'mlb' || sport === 'nfl') {
+      return [
+        { key: 'wins', label: 'col.wins' },
+        { key: 'losses', label: 'col.losses' },
+        { key: 'games_behind', label: 'col.gb' },
+        { key: 'streak', label: 'col.streak' },
+        { key: 'win_pct', label: 'col.pct', cls: 'points-cell' },
+      ];
+    }
+    // Football / rugby / default — full league table
+    return [
+      { key: 'played', label: 'col.played' },
+      { key: 'wins', label: 'col.wins' },
+      { key: 'draws', label: 'col.draws' },
+      { key: 'losses', label: 'col.losses' },
+      { key: 'gd', label: 'col.gd' },
+      { key: 'points', label: 'col.points', cls: 'points-cell' },
+    ];
+  }
+
+  /** Column descriptors for the compact table (group grids / compact mode). */
+  _compactColumns() {
+    const sport = this._sport();
+    if (sport === 'nhl') {
+      return [{ key: 'record', label: 'col.wins' }, { key: 'points', label: 'col.points', cls: 'points-cell' }];
+    }
+    if (sport === 'nba' || sport === 'mlb' || sport === 'nfl') {
+      return [{ key: 'record', label: 'col.wins' }, { key: 'win_pct', label: 'col.pct', cls: 'points-cell' }];
+    }
+    return [{ key: 'gd', label: 'col.gd' }, { key: 'points', label: 'col.points', cls: 'points-cell' }];
+  }
+
+  /** Resolve a column descriptor to {value, cls} for a team row. */
+  _cellFor(team, col) {
+    const num = (v) => {
+      if (v === null || v === undefined || v === '') return null;
+      const n = parseInt(String(v).replace('+', ''), 10);
+      return isNaN(n) ? null : n;
+    };
+    if (col.key === 'played') {
+      const w = num(team.wins), d = num(team.draws), l = num(team.losses);
+      const played = (w !== null && l !== null) ? (w + (d || 0) + l) : null;
+      return { value: played ?? (team.games_played && team.games_played !== 'N/A' ? team.games_played : '-'), cls: col.cls || '' };
+    }
+    if (col.key === 'gd') {
+      const gd = num(team.goal_difference);
+      return {
+        value: gd === null ? '-' : (gd > 0 ? `+${gd}` : `${gd}`),
+        cls: gd === null ? '' : (gd > 0 ? 'gd-pos' : (gd < 0 ? 'gd-neg' : '')),
+      };
+    }
+    if (col.key === 'record') {
+      const w = team.wins, l = team.losses;
+      const rec = (w != null && w !== 'N/A' && l != null && l !== 'N/A') ? `${w}-${l}` : '-';
+      return { value: rec, cls: col.cls || '' };
+    }
+    const raw = team[col.key];
+    const value = (raw === null || raw === undefined || raw === '' || raw === 'N/A') ? '-' : raw;
+    return { value, cls: col.cls || '' };
+  }
+
   _renderFullTable(standings, total) {
+    const cols = this._fullColumns();
     return html`
       <table class="standings-table">
         <thead>
           <tr>
             <th>${this._t('col.pos')}</th>
             <th class="team-col">${this._t('col.team')}</th>
-            <th>${this._t('col.played')}</th>
-            <th>${this._t('col.wins')}</th>
-            <th>${this._t('col.draws')}</th>
-            <th>${this._t('col.losses')}</th>
-            <th>${this._t('col.gd')}</th>
-            <th>${this._t('col.points')}</th>
+            ${cols.map(c => html`<th>${this._t(c.label)}</th>`)}
           </tr>
         </thead>
         <tbody>
           ${standings.map(team => {
-            const num = (v) => {
-              if (v === null || v === undefined || v === '') return null;
-              const n = parseInt(String(v).replace('+', ''), 10);
-              return isNaN(n) ? null : n;
-            };
-            const w = num(team.wins);
-            const d = num(team.draws);
-            const l = num(team.losses);
-            const gd = num(team.goal_difference);
-            const played = (w !== null && d !== null && l !== null) ? (w + d + l) : null;
-            const gdClass = gd === null ? '' : (gd > 0 ? 'gd-pos' : (gd < 0 ? 'gd-neg' : ''));
-            const gdLabel = gd === null ? '-' : (gd > 0 ? `+${gd}` : `${gd}`);
             const isHighlighted = this.highlightTeam && team.team_name &&
               team.team_name.toLowerCase().includes(this.highlightTeam.toLowerCase());
             return html`
@@ -558,12 +673,7 @@ class CalcioLiveStandingsCard extends LitElement {
                   <img src="${team.team_logo}" alt="${team.team_name}" />
                   <span class="tname">${team.team_name}</span>
                 </td>
-                <td>${played ?? '-'}</td>
-                <td>${w ?? '-'}</td>
-                <td>${d ?? '-'}</td>
-                <td>${l ?? '-'}</td>
-                <td class="${gdClass}">${gdLabel}</td>
-                <td class="points-cell">${team.points ?? '-'}</td>
+                ${cols.map(c => { const cell = this._cellFor(team, c); return html`<td class="${cell.cls}">${cell.value}</td>`; })}
               </tr>
             `;
           })}
@@ -573,38 +683,27 @@ class CalcioLiveStandingsCard extends LitElement {
   }
 
   _renderCompactTable(standings, total) {
+    const cols = this._compactColumns();
     return html`
       <table class="standings-table compact">
         <thead>
           <tr>
             <th>${this._t('col.pos')}</th>
             <th class="team-col">${this._t('col.team')}</th>
-            <th>${this._t('col.gd')}</th>
-            <th>${this._t('col.points')}</th>
+            ${cols.map(c => html`<th>${this._t(c.label)}</th>`)}
           </tr>
         </thead>
         <tbody>
-          ${standings.map(team => {
-            const num = (v) => {
-              if (v === null || v === undefined || v === '') return null;
-              const n = parseInt(String(v).replace('+', ''), 10);
-              return isNaN(n) ? null : n;
-            };
-            const gd = num(team.goal_difference);
-            const gdClass = gd === null ? '' : (gd > 0 ? 'gd-pos' : (gd < 0 ? 'gd-neg' : ''));
-            const gdLabel = gd === null ? '-' : (gd > 0 ? `+${gd}` : `${gd}`);
-            return html`
+          ${standings.map(team => html`
               <tr class="${this._zoneClass(team.rank, total)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
                   <img src="${team.team_logo}" alt="${team.team_name}" />
                   <span class="tname">${team.team_name}</span>
                 </td>
-                <td class="${gdClass}">${gdLabel}</td>
-                <td class="points-cell">${team.points ?? '-'}</td>
+                ${cols.map(c => { const cell = this._cellFor(team, c); return html`<td class="${cell.cls}">${cell.value}</td>`; })}
               </tr>
-            `;
-          })}
+          `)}
         </tbody>
       </table>
     `;
@@ -705,10 +804,13 @@ class CalcioLiveStandingsCard extends LitElement {
         box-shadow: 0 4px 24px var(--cl-shadow);
       }
       ha-card.empty {
-        padding: 24px;
+        padding: 36px 24px;
         text-align: center;
         color: var(--cl-text-2);
       }
+      .empty-icon { font-size: 40px; line-height: 1; margin-bottom: 10px; opacity: 0.85; }
+      .empty-title { font-size: 15px; font-weight: 800; color: var(--cl-text); margin-bottom: 4px; }
+      .empty-sub { font-size: 12px; color: var(--cl-text-2); }
 
       .top-bar {
         position: relative;
@@ -1077,7 +1179,7 @@ class CalcioLiveStandingsCard extends LitElement {
   }
 }
 
-customElements.define("sports-live-classifica", CalcioLiveStandingsCard);
+customElements.define("sports-live-classifica", SportsLiveStandingsCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

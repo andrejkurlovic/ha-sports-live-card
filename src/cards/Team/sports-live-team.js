@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 
-class CalcioLiveTeamNextCard extends LitElement {
+class SportsLiveTeamNextCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -73,6 +73,8 @@ class CalcioLiveTeamNextCard extends LitElement {
     super.connectedCallback();
     this._subscribeToEvents();
     this._clockTick = setInterval(() => {
+      // Skip work when the tab/card is not visible.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       const stateObj = this.hass?.states?.[this._config?.entity];
       const match = stateObj?.attributes?.matches?.[0];
       if (match?.state === 'in' && match?.clock && match.clock !== 'N/A') {
@@ -104,7 +106,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     // calcio_live_* aliases are soccer-only and kept for user automations).
     ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
       this.hass.connection.subscribeEvents(
-        this._handleCalcioLiveEvent.bind(this),
+        this._handleSportsLiveEvent.bind(this),
         evt
       ).then(unsub => {
         if (typeof unsub === 'function') {
@@ -124,7 +126,7 @@ class CalcioLiveTeamNextCard extends LitElement {
     return m.home_team === eventData.home_team && m.away_team === eventData.away_team;
   }
 
-  _handleCalcioLiveEvent(event) {
+  _handleSportsLiveEvent(event) {
     const eventType = event.event_type;
     const eventData = event.data;
     if (!this._eventBelongsToThisCard(eventData)) return;
@@ -1387,7 +1389,7 @@ class CalcioLiveTeamNextCard extends LitElement {
   }
 }
 
-customElements.define("sports-live-team", CalcioLiveTeamNextCard);
+customElements.define("sports-live-team", SportsLiveTeamNextCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

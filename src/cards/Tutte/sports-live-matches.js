@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
 
-class CalcioLiveTodayMatchesCard extends LitElement {
+class SportsLiveTodayMatchesCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -52,6 +52,9 @@ class CalcioLiveTodayMatchesCard extends LitElement {
     super.connectedCallback();
     this._subscribeToEvents();
     this._clockTick = setInterval(() => {
+      // Skip work when the tab/card is not visible — no point re-rendering
+      // a hidden card every second.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       const stateObj = this.hass?.states?.[this._config?.entity];
       const matches = stateObj?.attributes?.matches || [];
       if (matches.some(m => m.state === 'in' && m.clock && m.clock !== 'N/A')) {
@@ -82,7 +85,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
     // Canonical events fire for all sports (legacy calcio_live_* are soccer-only).
     ['sports_live_score', 'sports_live_discipline'].forEach(evt => {
       this.hass.connection.subscribeEvents(
-        this._handleCalcioLiveEvent.bind(this),
+        this._handleSportsLiveEvent.bind(this),
         evt
       ).then(unsub => {
         if (typeof unsub === 'function') {
@@ -100,7 +103,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
     return matches.some(m => m.home_team === eventData.home_team && m.away_team === eventData.away_team);
   }
 
-  _handleCalcioLiveEvent(event) {
+  _handleSportsLiveEvent(event) {
     const eventType = event.event_type;
     const eventData = event.data;
     if (!this._eventBelongsToThisCard(eventData)) return;
@@ -381,7 +384,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
               ? html`<img class="league-logo" src="${leagueInfo.logo_href}" alt="${leagueInfo.abbreviation || ''}" />`
               : (teamLogo ? html`<img class="league-logo" src="${teamLogo}" alt="" />` : '')}
             <div class="league-info">
-              <div class="league-name">${(leagueInfo && leagueInfo.abbreviation) || stateObj.state || 'Calcio Live'}</div>
+              <div class="league-name">${(leagueInfo && leagueInfo.abbreviation) || stateObj.state || 'Sports Live'}</div>
               <div class="league-dates">
                 ${leagueInfo && leagueInfo.startDate ? `${leagueInfo.startDate} → ${leagueInfo.endDate}` : this._t('generic.matches_count', { n: limited.length })}
               </div>
@@ -800,7 +803,7 @@ class CalcioLiveTodayMatchesCard extends LitElement {
   }
 }
 
-customElements.define("sports-live-matches", CalcioLiveTodayMatchesCard);
+customElements.define("sports-live-matches", SportsLiveTodayMatchesCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

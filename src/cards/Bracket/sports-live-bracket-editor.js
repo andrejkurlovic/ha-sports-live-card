@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class CalcioLiveTimelineEditor extends LitElement {
+class SportsLiveBracketEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -17,7 +17,7 @@ class CalcioLiveTimelineEditor extends LitElement {
       .option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       label { font-size: 14px; color: var(--primary-text-color); }
       .field-label { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; font-weight: 600; }
-      select, input[type="number"] {
+      select {
         width: 100%; padding: 10px 12px; font-size: 14px;
         border-radius: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
@@ -65,17 +65,6 @@ class CalcioLiveTimelineEditor extends LitElement {
     this._fireConfigChanged({ ...this._config, [key]: value });
   }
 
-  _numberChanged(ev) {
-    if (!this._config) return;
-    const target = ev.target;
-    if (!target.dataset || !target.dataset.configValue) return;
-    const key = target.dataset.configValue;
-    const value = parseInt(target.value, 10);
-    if (isNaN(value)) return;
-    if (this._config[key] === value) return;
-    this._fireConfigChanged({ ...this._config, [key]: value });
-  }
-
   _selectChanged(ev) {
     if (!this._config) return;
     const target = ev.target;
@@ -92,7 +81,7 @@ class CalcioLiveTimelineEditor extends LitElement {
       .filter(id => {
         if (!id.startsWith('sensor.')) return false;
         const attrs = this.hass.states[id]?.attributes;
-        return attrs?.sport !== undefined && Array.isArray(attrs?.matches);
+        return attrs?.sport !== undefined && Array.isArray(attrs?.rounds);
       })
       .sort();
   }
@@ -105,15 +94,22 @@ class CalcioLiveTimelineEditor extends LitElement {
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
-          <label class="field-label">Entity (team next_match sensor)</label>
+          <label class="field-label">Entity (standings bracket sensor)</label>
           <select @change=${this._entityChanged}>
             ${!inList ? html`<option value="${cur}" selected>${cur || '— select —'}</option>` : ''}
             ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
           </select>
-          <div class="hint" style="margin-top: 4px;">Events are published during the match.</div>
+          <div class="hint" style="margin-top: 4px;">Available for Champions League, Europa League, Conference League, FIFA World Cup and other cups.</div>
         </div>
 
         <h3>Settings</h3>
+        <div>
+          <label class="field-label">Style</label>
+          <select data-config-value="style" @change=${this._selectChanged}>
+            <option value="list" ?selected=${this._config.style !== 'tree'}>List (default)</option>
+            <option value="tree" ?selected=${this._config.style === 'tree'}>Tree (bracket with central trophy)</option>
+          </select>
+        </div>
         <div class="option">
           <label>Hide Header</label>
           <ha-switch
@@ -123,27 +119,20 @@ class CalcioLiveTimelineEditor extends LitElement {
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Reverse order (most recent first)</label>
+          <label>Compact (list mode: round in column)</label>
           <ha-switch
-            .checked=${this._config.reverse_order === true}
-            data-config-value="reverse_order"
+            .checked=${this._config.compact === true}
+            data-config-value="compact"
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Key Events Only (goals &amp; cards)</label>
+          <label>Tree: include Playoffs</label>
           <ha-switch
-            .checked=${this._config.show_only_key === true}
-            data-config-value="show_only_key"
+            .checked=${this._config.tree_show_playoffs === true}
+            data-config-value="tree_show_playoffs"
             @change=${this._switchChanged}
           ></ha-switch>
-        </div>
-        <div>
-          <label class="field-label">Max Events (0 = all)</label>
-          <input type="number" min="0" max="100"
-            .value=${this._config.max_events || 0}
-            data-config-value="max_events"
-            @change=${this._numberChanged} />
         </div>
         <div>
           <label class="field-label">Skin</label>
@@ -168,4 +157,4 @@ class CalcioLiveTimelineEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-timeline-editor', CalcioLiveTimelineEditor);
+customElements.define('sports-live-bracket-editor', SportsLiveBracketEditor);

@@ -2,7 +2,7 @@ import { LitElement, html, svg, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
 
-class CalcioLiveBracketCard extends LitElement {
+class SportsLiveBracketCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -909,7 +909,7 @@ class CalcioLiveBracketCard extends LitElement {
   }
 }
 
-customElements.define("sports-live-bracket", CalcioLiveBracketCard);
+customElements.define("sports-live-bracket", SportsLiveBracketCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

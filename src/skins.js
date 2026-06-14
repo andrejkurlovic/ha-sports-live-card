@@ -1,6 +1,6 @@
 import { css } from "lit-element";
 
-// Skin condivise per tutte le card Calcio Live.
+// Shared skins for all Sports Live cards.
 //
 // Obiettivo: un flag `skin` per card (valori: 'dark' | 'light', default 'dark')
 // indipendente dal tema di Home Assistant. Le card NON devono più dipendere da

@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class CalcioLiveClassificaCardEditor extends LitElement {
+class SportsLiveClassificaCardEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -272,4 +272,4 @@ class CalcioLiveClassificaCardEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-classifica-editor', CalcioLiveClassificaCardEditor);
+customElements.define('sports-live-classifica-editor', SportsLiveClassificaCardEditor);

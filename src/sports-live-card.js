@@ -1,0 +1,16 @@
+import "./cards/Classifica/sports-live-classifica.js";
+import "./cards/Classifica/sports-live-classifica-editor.js";
+import "./cards/Tutte/sports-live-matches.js";
+import "./cards/Tutte/sports-live-matches-editor.js";
+import "./cards/Team/sports-live-team.js";
+import "./cards/Team/sports-live-team-editor.js";
+import "./cards/News/sports-live-news.js";
+import "./cards/News/sports-live-news-editor.js";
+import "./cards/Lineup/sports-live-lineup.js";
+import "./cards/Lineup/sports-live-lineup-editor.js";
+import "./cards/Timeline/sports-live-timeline.js";
+import "./cards/Timeline/sports-live-timeline-editor.js";
+import "./cards/Bracket/sports-live-bracket.js";
+import "./cards/Bracket/sports-live-bracket-editor.js";
+import "./cards/Game/sports-live-game-card.js";
+import "./cards/Game/sports-live-game-editor.js";

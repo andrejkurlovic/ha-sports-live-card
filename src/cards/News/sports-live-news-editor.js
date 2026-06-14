@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class CalcioLiveLineupEditor extends LitElement {
+class SportsLiveNewsEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -9,7 +9,10 @@ class CalcioLiveLineupEditor extends LitElement {
     };
   }
 
-  constructor() { super(); this.entities = []; }
+  constructor() {
+    super();
+    this.entities = [];
+  }
 
   static get styles() {
     return css`
@@ -17,7 +20,7 @@ class CalcioLiveLineupEditor extends LitElement {
       .option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       label { font-size: 14px; color: var(--primary-text-color); }
       .field-label { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; font-weight: 600; }
-      select {
+      select, input[type="number"] {
         width: 100%; padding: 10px 12px; font-size: 14px;
         border-radius: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
@@ -26,7 +29,6 @@ class CalcioLiveLineupEditor extends LitElement {
         box-sizing: border-box;
       }
       h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
-      .hint { font-size: 12px; color: var(--secondary-text-color); }
     `;
   }
 
@@ -75,13 +77,24 @@ class CalcioLiveLineupEditor extends LitElement {
     this._fireConfigChanged({ ...this._config, [key]: value });
   }
 
+  _numberChanged(ev) {
+    if (!this._config) return;
+    const target = ev.target;
+    if (!target.dataset || !target.dataset.configValue) return;
+    const key = target.dataset.configValue;
+    const value = parseInt(target.value, 10);
+    if (isNaN(value)) return;
+    if (this._config[key] === value) return;
+    this._fireConfigChanged({ ...this._config, [key]: value });
+  }
+
   _fetchEntities() {
     if (!this.hass) return;
     this.entities = Object.keys(this.hass.states)
       .filter(id => {
         if (!id.startsWith('sensor.')) return false;
         const attrs = this.hass.states[id]?.attributes;
-        return attrs?.sport !== undefined && Array.isArray(attrs?.matches);
+        return attrs?.sport !== undefined && Array.isArray(attrs?.articles);
       })
       .sort();
   }
@@ -94,12 +107,11 @@ class CalcioLiveLineupEditor extends LitElement {
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
-          <label class="field-label">Entity (team next_match sensor)</label>
+          <label class="field-label">Entity (news sensor)</label>
           <select @change=${this._entityChanged}>
             ${!inList ? html`<option value="${cur}" selected>${cur || '— select —'}</option>` : ''}
             ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
           </select>
-          <div class="hint" style="margin-top: 4px;">Lineups are published shortly before kick-off.</div>
         </div>
 
         <h3>Settings</h3>
@@ -112,20 +124,27 @@ class CalcioLiveLineupEditor extends LitElement {
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Show Bench Players</label>
+          <label>Hide Images</label>
           <ha-switch
-            .checked=${this._config.show_bench !== false}
-            data-config-value="show_bench"
+            .checked=${this._config.hide_images === true}
+            data-config-value="hide_images"
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Show Player Photos</label>
+          <label>Hide Descriptions</label>
           <ha-switch
-            .checked=${this._config.show_photos !== false}
-            data-config-value="show_photos"
+            .checked=${this._config.hide_description === true}
+            data-config-value="hide_description"
             @change=${this._switchChanged}
           ></ha-switch>
+        </div>
+        <div>
+          <label class="field-label">Max Articles</label>
+          <input type="number" min="1" max="20"
+            .value=${this._config.max_articles || 5}
+            data-config-value="max_articles"
+            @change=${this._numberChanged} />
         </div>
         <div>
           <label class="field-label">Skin</label>
@@ -150,4 +169,4 @@ class CalcioLiveLineupEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-lineup-editor', CalcioLiveLineupEditor);
+customElements.define('sports-live-news-editor', SportsLiveNewsEditor);

@@ -1,5 +1,5 @@
-// Traduzioni centralizzate per tutte le card Calcio Live.
-// Lingue supportate: en (default), it, fr, es.
+// Centralised translations for all Sports Live cards.
+// Supported languages: en (default), nl, it, fr, es.
 // La lingua viene rilevata da hass.locale.language o hass.language; può essere
 // sovrascritta tramite config.language sulla singola card.
 
@@ -130,6 +130,12 @@ const TRANSLATIONS = {
     'col.points': 'Pts',
     'col.gf': 'GF',
     'col.ga': 'GA',
+    'col.pct': 'PCT',
+    'col.gb': 'GB',
+    'col.streak': 'Strk',
+    'col.otl': 'OTL',
+    'standings.empty.title': 'No standings yet',
+    'standings.empty.sub': 'Standings appear once the season is under way.',
     'team.form': 'Form',
     'team.last5': 'Last 5',
 
@@ -268,6 +274,12 @@ const TRANSLATIONS = {
     'col.points': 'Pnt',
     'col.gf': 'VD',
     'col.ga': 'TD',
+    'col.pct': 'PCT',
+    'col.gb': 'GB',
+    'col.streak': 'Reeks',
+    'col.otl': 'OTL',
+    'standings.empty.title': 'Nog geen stand',
+    'standings.empty.sub': 'De stand verschijnt zodra het seizoen begonnen is.',
     'team.form': 'Vorm',
     'team.last5': 'Laatste 5',
 
@@ -394,6 +406,12 @@ const TRANSLATIONS = {
     'col.points': 'Pt',
     'col.gf': 'GF',
     'col.ga': 'GS',
+    'col.pct': 'PCT',
+    'col.gb': 'GB',
+    'col.streak': 'Serie',
+    'col.otl': 'OTL',
+    'standings.empty.title': 'Classifica non disponibile',
+    'standings.empty.sub': 'La classifica appare a stagione iniziata.',
     'team.form': 'Forma',
     'team.last5': 'Ultime 5',
 
@@ -517,6 +535,12 @@ const TRANSLATIONS = {
     'col.points': 'Pts',
     'col.gf': 'BP',
     'col.ga': 'BC',
+    'col.pct': 'PCT',
+    'col.gb': 'GB',
+    'col.streak': 'Série',
+    'col.otl': 'OTL',
+    'standings.empty.title': 'Classement indisponible',
+    'standings.empty.sub': 'Le classement apparaît une fois la saison lancée.',
     'team.form': 'Forme',
     'team.last5': '5 derniers',
 
@@ -640,6 +664,12 @@ const TRANSLATIONS = {
     'col.points': 'Pts',
     'col.gf': 'GF',
     'col.ga': 'GC',
+    'col.pct': 'PCT',
+    'col.gb': 'GB',
+    'col.streak': 'Racha',
+    'col.otl': 'OTL',
+    'standings.empty.title': 'Clasificación no disponible',
+    'standings.empty.sub': 'La clasificación aparece al comenzar la temporada.',
     'team.form': 'Forma',
     'team.last5': 'Últimos 5',
 

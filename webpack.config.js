@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/calcio-live-card.js',
+  entry: './src/sports-live-card.js',
   output: {
     filename: 'sports-live-card.bundle.js',
     path: path.resolve(__dirname, 'dist'),

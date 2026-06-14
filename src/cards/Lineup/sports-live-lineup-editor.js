@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class CalcioLiveTeamNextCardEditor extends LitElement {
+class SportsLiveLineupEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -9,56 +9,24 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
     };
   }
 
-  constructor() {
-    super();
-    this.entities = [];
-  }
+  constructor() { super(); this.entities = []; }
 
   static get styles() {
     return css`
-      .card-config {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      .option {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-      label {
-        font-size: 14px;
-        color: var(--primary-text-color);
-      }
-      .field-label {
-        display: block;
-        font-size: 12px;
-        color: var(--secondary-text-color);
-        margin-bottom: 4px;
-        font-weight: 600;
-      }
+      .card-config { display: flex; flex-direction: column; gap: 16px; }
+      .option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      label { font-size: 14px; color: var(--primary-text-color); }
+      .field-label { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; font-weight: 600; }
       select {
-        width: 100%;
-        padding: 10px 12px;
-        font-size: 14px;
+        width: 100%; padding: 10px 12px; font-size: 14px;
         border-radius: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
         background: var(--card-background-color, #fff);
         color: var(--primary-text-color, #000);
         box-sizing: border-box;
       }
-      select:focus {
-        outline: 2px solid var(--primary-color, #03a9f4);
-        outline-offset: -1px;
-      }
-      h3 {
-        margin: 8px 0 0;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--secondary-text-color);
-      }
+      h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
+      .hint { font-size: 12px; color: var(--secondary-text-color); }
     `;
   }
 
@@ -66,7 +34,6 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
     if (!config) throw new Error('Invalid configuration');
     this._config = { ...config };
   }
-
   get config() { return this._config; }
 
   updated(changedProperties) {
@@ -76,9 +43,7 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
   _fireConfigChanged(newConfig) {
     this._config = newConfig;
     this.dispatchEvent(new CustomEvent('config-changed', {
-      detail: { config: newConfig },
-      bubbles: true,
-      composed: true,
+      detail: { config: newConfig }, bubbles: true, composed: true,
     }));
     this.requestUpdate();
   }
@@ -123,20 +88,18 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
 
   render() {
     if (!this._config || !this.hass) return html``;
-    const currentEntity = this._config.entity || '';
-    const entityInList = currentEntity && this.entities.includes(currentEntity);
-
+    const cur = this._config.entity || '';
+    const inList = cur && this.entities.includes(cur);
     return html`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
-          <label class="field-label">Entity</label>
+          <label class="field-label">Entity (team next_match sensor)</label>
           <select @change=${this._entityChanged}>
-            ${!entityInList ? html`<option value="${currentEntity}" selected>${currentEntity || '— select —'}</option>` : ''}
-            ${this.entities.map(e => html`
-              <option value="${e}" ?selected=${e === currentEntity}>${e}</option>
-            `)}
+            ${!inList ? html`<option value="${cur}" selected>${cur || '— select —'}</option>` : ''}
+            ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
           </select>
+          <div class="hint" style="margin-top: 4px;">Lineups are published shortly before kick-off.</div>
         </div>
 
         <h3>Settings</h3>
@@ -149,66 +112,26 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Show Event Toasts (in-card)</label>
+          <label>Show Bench Players</label>
           <ha-switch
-            .checked=${this._config.show_event_toasts === true}
-            data-config-value="show_event_toasts"
+            .checked=${this._config.show_bench !== false}
+            data-config-value="show_bench"
             @change=${this._switchChanged}
           ></ha-switch>
         </div>
         <div class="option">
-          <label>Hide Venue</label>
+          <label>Show Player Photos</label>
           <ha-switch
-            .checked=${this._config.hide_venue === true}
-            data-config-value="hide_venue"
+            .checked=${this._config.show_photos !== false}
+            data-config-value="show_photos"
             @change=${this._switchChanged}
           ></ha-switch>
-        </div>
-        <div class="option">
-          <label>Hide Form Badges</label>
-          <ha-switch
-            .checked=${this._config.hide_form === true}
-            data-config-value="hide_form"
-            @change=${this._switchChanged}
-          ></ha-switch>
-        </div>
-        <div class="option">
-          <label>Hide W/D/L Records</label>
-          <ha-switch
-            .checked=${this._config.hide_records === true}
-            data-config-value="hide_records"
-            @change=${this._switchChanged}
-          ></ha-switch>
-        </div>
-        <div class="option">
-          <label>Hide Top Scorer</label>
-          <ha-switch
-            .checked=${this._config.hide_top_scorer === true}
-            data-config-value="hide_top_scorer"
-            @change=${this._switchChanged}
-          ></ha-switch>
-        </div>
-        <div>
-          <label class="field-label">TV Broadcast Region</label>
-          <select data-config-value="broadcast_region" @change=${this._selectChanged}>
-            <option value="uk" ?selected=${(this._config.broadcast_region || 'uk') === 'uk'}>UK (default)</option>
-            <option value="us" ?selected=${this._config.broadcast_region === 'us'}>US</option>
-            <option value="both" ?selected=${this._config.broadcast_region === 'both'}>Both</option>
-          </select>
         </div>
         <div>
           <label class="field-label">Skin</label>
           <select data-config-value="skin" @change=${this._selectChanged}>
             <option value="dark" ?selected=${(this._config.skin || 'dark') === 'dark'}>Dark</option>
             <option value="light" ?selected=${this._config.skin === 'light'}>Light</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Score Size</label>
-          <select data-config-value="score_size" @change=${this._selectChanged}>
-            <option value="normal" ?selected=${(this._config.score_size || 'normal') === 'normal'}>Normal</option>
-            <option value="big" ?selected=${this._config.score_size === 'big'}>Big</option>
-            <option value="huge" ?selected=${this._config.score_size === 'huge'}>Huge</option>
           </select>
         </div>
         <div>
@@ -227,4 +150,4 @@ class CalcioLiveTeamNextCardEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-team-editor', CalcioLiveTeamNextCardEditor);
+customElements.define('sports-live-lineup-editor', SportsLiveLineupEditor);
