@@ -202,6 +202,15 @@ class SportsLiveTodayMatchesEditor extends LitElement {
           ></ha-switch>
         </div>
 
+        <div class="option">
+          <label>Show Odds in Popup</label>
+          <ha-switch
+            .checked=${this._config.show_odds === true}
+            data-config-value="show_odds"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+
         <div>
           <label class="field-label">Max Events Visible</label>
           <input

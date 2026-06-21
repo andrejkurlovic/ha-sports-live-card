@@ -42,6 +42,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
     this.reverseOrder = config.reverse_order === true;
     this.showEventToasts = config.show_event_toasts === true;
     this.showVenue = config.show_venue === true;
+    this.showOdds = config.show_odds === true;
     this.activeMatch = null;
     this.showPopup = false;
   }
@@ -197,6 +198,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
       hide_header: false,
       show_event_toasts: false,
       show_venue: false,
+      show_odds: false,
     };
   }
 
@@ -515,12 +517,40 @@ class SportsLiveTodayMatchesCard extends LitElement {
           <img style="width:64px;height:64px;object-fit:contain;" src="${esc(m.away_logo)}" alt="${esc(m.away_team)}" />
         </div>
         <p style="text-align:center;color:var(--p-muted);font-size:14px;margin:0 0 20px;"><strong>${esc(m.home_team)}</strong> vs <strong>${esc(m.away_team)}</strong></p>
+        <div id="matches-info-container"></div>
         <div id="matches-events-container"></div>
-        <button id="matches-popup-close" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:20px;font-weight:800;width:100%;font-size:14px;">${esc(tx('generic.close'))}</button>
+        ${m.event_url ? `
+          <button id="matches-popup-espn" style="background:var(--p-panel);color:var(--p-text);border:1px solid var(--p-border);padding:10px 20px;border-radius:12px;cursor:pointer;margin-top:8px;font-weight:700;width:100%;font-size:13px;">${esc(tx('popup.view_on_espn'))}</button>
+        ` : ''}
+        <button id="matches-popup-close" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:12px 20px;border:none;border-radius:12px;cursor:pointer;margin-top:8px;font-weight:800;width:100%;font-size:14px;">${esc(tx('generic.close'))}</button>
       </div>
     `;
 
     popupContainer.querySelector('#matches-popup-close').onclick = () => { this.showPopup = false; };
+    const espnBtn = popupContainer.querySelector('#matches-popup-espn');
+    if (espnBtn) espnBtn.onclick = () => { window.open(m.event_url, '_blank', 'noopener,noreferrer'); };
+
+    const infoContainer = popupContainer.querySelector('#matches-info-container');
+    const infoRow = (label, value) => `
+      <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--p-border);">
+        <span style="color:var(--p-sub);font-weight:600;">${esc(label)}</span>
+        <span style="color:var(--p-text);text-align:right;">${esc(value)}</span>
+      </div>
+    `;
+    let infoHtml = '';
+    if (this._getVenue(m)) {
+      infoHtml += infoRow(tx('popup.venue'), m.venue_city ? `${m.venue}, ${m.venue_city}` : m.venue);
+    }
+    const popupBroadcast = this._getBroadcast(m);
+    if (popupBroadcast) infoHtml += infoRow(tx('popup.tv'), popupBroadcast);
+    if (m.attendance) infoHtml += infoRow(tx('popup.attendance'), Number(m.attendance).toLocaleString());
+    if (m.home_record) infoHtml += infoRow(m.home_abbrev || m.home_team, m.home_record);
+    if (m.away_record) infoHtml += infoRow(m.away_abbrev || m.away_team, m.away_record);
+    if (this.showOdds && m.odds_details) infoHtml += infoRow(tx('popup.odds'), m.odds_details);
+    if (this.showOdds && m.over_under != null) infoHtml += infoRow(tx('popup.over_under'), m.over_under);
+    infoContainer.innerHTML = infoHtml
+      ? `<div style="margin-bottom:16px;">${infoHtml}</div>`
+      : '';
 
     const eventsContainer = popupContainer.querySelector('#matches-events-container');
     const { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals } = this.separateEvents(m.match_details || []);
