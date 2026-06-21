@@ -193,6 +193,15 @@ class SportsLiveTodayMatchesEditor extends LitElement {
           ></ha-switch>
         </div>
 
+        <div class="option">
+          <label>Show Venue/Stadium</label>
+          <ha-switch
+            .checked=${this._config.show_venue === true}
+            data-config-value="show_venue"
+            @change=${this._switchChanged}
+          ></ha-switch>
+        </div>
+
         <div>
           <label class="field-label">Max Events Visible</label>
           <input

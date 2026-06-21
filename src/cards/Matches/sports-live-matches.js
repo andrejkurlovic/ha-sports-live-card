@@ -41,6 +41,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
     this.hidePastDays = config.hide_past_days !== undefined ? config.hide_past_days : 0;
     this.reverseOrder = config.reverse_order === true;
     this.showEventToasts = config.show_event_toasts === true;
+    this.showVenue = config.show_venue === true;
     this.activeMatch = null;
     this.showPopup = false;
   }
@@ -195,6 +196,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
       show_finished_matches: true,
       hide_header: false,
       show_event_toasts: false,
+      show_venue: false,
     };
   }
 
@@ -350,6 +352,10 @@ class SportsLiveTodayMatchesCard extends LitElement {
     return uk || us;
   }
 
+  _getVenue(match) {
+    return match.venue && match.venue !== 'N/A' ? match.venue : '';
+  }
+
   render() {
     if (!this.hass || !this._config) return html``;
     const entityId = this._config.entity;
@@ -435,6 +441,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
               const homeWinner = this._isWinner(match, 'home');
               const awayWinner = this._isWinner(match, 'away');
               const broadcast = this._getBroadcast(match);
+              const venue = this.showVenue ? this._getVenue(match) : '';
               const isUpcoming = match.state === 'pre';
               return html`
                 <div class="match-row ${isLive ? 'live' : ''} ${recent === 'goal' ? 'goal-pulse' : ''} ${recent === 'card' ? 'card-pulse' : ''}"
@@ -453,12 +460,20 @@ class SportsLiveTodayMatchesCard extends LitElement {
                       <span class="name ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${match.away_team}</span>
                       <span class="score ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${this._matchScore(match, 'away')}</span>
                     </div>
-                    ${broadcast && (isUpcoming || isLive) ? html`
+                    ${(broadcast && (isUpcoming || isLive)) || venue ? html`
                       <div class="row-extras">
-                        <span class="tv-chip" title="Watch on TV">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
-                          ${broadcast}
-                        </span>
+                        ${broadcast && (isUpcoming || isLive) ? html`
+                          <span class="tv-chip" title="Watch on TV">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                            ${broadcast}
+                          </span>
+                        ` : ''}
+                        ${venue ? html`
+                          <span class="venue-chip" title="Venue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-7.2-7-12a7 7 0 1 1 14 0c0 4.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                            ${venue}
+                          </span>
+                        ` : ''}
                       </div>
                     ` : ''}
                   </div>
@@ -762,6 +777,23 @@ class SportsLiveTodayMatchesCard extends LitElement {
         letter-spacing: 0.04em;
       }
       .tv-chip svg { width: 10px; height: 10px; }
+      .venue-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        background: var(--cl-card-2);
+        border: 1px solid var(--cl-divider);
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--cl-text-2);
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .venue-chip svg { width: 10px; height: 10px; flex-shrink: 0; }
       .match-status-icon {
         color: var(--cl-text-2);
         font-size: 18px;
