@@ -1,6 +1,7 @@
 import { LitElement, html, svg, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveBracketCard extends LitElement {
   static get properties() {
@@ -91,7 +92,7 @@ class SportsLiveBracketCard extends LitElement {
     return html`
       <div class="tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''}">
         <div class="tie-row ${isAWinner ? 'winner' : ''} ${isBWinner ? 'loser' : ''}">
-          <img src="${a.logo}" alt="${a.name}" />
+          <img src="${teamLogo(a.logo)}" onerror="${LOGO_ONERROR}" alt="${a.name}" />
           <span class="tname">${a.name || 'TBD'}</span>
           <span class="legs">
             ${single ? html`<span class="leg">${this._formatScore(aSingle)}</span>` : html`
@@ -101,7 +102,7 @@ class SportsLiveBracketCard extends LitElement {
           </span>
         </div>
         <div class="tie-row ${isBWinner ? 'winner' : ''} ${isAWinner ? 'loser' : ''}">
-          <img src="${b.logo}" alt="${b.name}" />
+          <img src="${teamLogo(b.logo)}" onerror="${LOGO_ONERROR}" alt="${b.name}" />
           <span class="tname">${b.name || 'TBD'}</span>
           <span class="legs">
             ${single ? html`<span class="leg">${this._formatScore(bSingle)}</span>` : html`

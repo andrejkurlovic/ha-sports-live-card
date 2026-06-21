@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit-element";
 import { skinStyles, applySkin } from "../../skins.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveGameCard extends LitElement {
   static get properties() {
@@ -246,8 +247,8 @@ class SportsLiveGameCard extends LitElement {
       >
         <div class="splash" aria-hidden="true"></div>
         <div class="bg-logos" aria-hidden="true">
-          <div class="bg-logo home"><img src="${match.home_logo}" alt="" /></div>
-          <div class="bg-logo away"><img src="${match.away_logo}" alt="" /></div>
+          ${match.home_logo ? html`<div class="bg-logo home"><img src="${match.home_logo}" alt="" /></div>` : ''}
+          ${match.away_logo ? html`<div class="bg-logo away"><img src="${match.away_logo}" alt="" /></div>` : ''}
         </div>
 
         <div class="top-bar">
@@ -265,7 +266,7 @@ class SportsLiveGameCard extends LitElement {
             <div class="logo-wrap home-glow"
               @click="${(e) => { e.stopPropagation(); this._openLink(homeTeamUrl || eventUrl); }}"
             >
-              <img class="logo" src="${match.home_logo}" alt="${match.home_team}" />
+              <img class="logo" src="${teamLogo(match.home_logo)}" onerror="${LOGO_ONERROR}" alt="${match.home_team}" />
             </div>
             <div class="team-name">${match.home_team}</div>
             ${match.home_record ? html`<div class="record">${match.home_record}</div>` : ""}
@@ -297,7 +298,7 @@ class SportsLiveGameCard extends LitElement {
             <div class="logo-wrap away-glow"
               @click="${(e) => { e.stopPropagation(); this._openLink(awayTeamUrl || eventUrl); }}"
             >
-              <img class="logo" src="${match.away_logo}" alt="${match.away_team}" />
+              <img class="logo" src="${teamLogo(match.away_logo)}" onerror="${LOGO_ONERROR}" alt="${match.away_team}" />
             </div>
             <div class="team-name">${match.away_team}</div>
             ${match.away_record ? html`<div class="record">${match.away_record}</div>` : ""}

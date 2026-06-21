@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveTimelineCard extends LitElement {
   static get properties() {
@@ -89,9 +90,9 @@ class SportsLiveTimelineCard extends LitElement {
             <div class="header-text">
               <div class="title">${this._t('card.timeline')}</div>
               <div class="subtitle">
-                <img class="mini-logo" src="${m.home_logo}" alt="" />
+                <img class="mini-logo" src="${teamLogo(m.home_logo)}" onerror="${LOGO_ONERROR}" alt="" />
                 <span>${m.home_score ?? '-'} - ${m.away_score ?? '-'}</span>
-                <img class="mini-logo" src="${m.away_logo}" alt="" />
+                <img class="mini-logo" src="${teamLogo(m.away_logo)}" onerror="${LOGO_ONERROR}" alt="" />
               </div>
             </div>
           </div>

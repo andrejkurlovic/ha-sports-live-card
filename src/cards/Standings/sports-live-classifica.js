@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 import { openModal, closeModal } from "../../modal-helper.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 // Helper per generare un range inclusivo
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
@@ -313,7 +314,7 @@ class SportsLiveStandingsCard extends LitElement {
     popup.innerHTML = `
       <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-          ${t.team_logo ? `<img src="${t.team_logo}" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />` : ''}
+          <img src="${teamLogo(t.team_logo)}" onerror="${LOGO_ONERROR}" style="width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" />
           <div>
             <div style="font-size:20px;font-weight:900;letter-spacing:-0.02em;">${t.team_name}</div>
             <div style="font-size:11px;font-weight:700;color:var(--p-sub);margin-top:4px;">${tx('col.pos')} #${t.rank} · ${t.points ?? '—'} ${tx('col.points')}</div>
@@ -650,7 +651,7 @@ class SportsLiveStandingsCard extends LitElement {
                   @click="${() => this.showTeamDetails(team)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
-                  <img src="${team.team_logo}" alt="${team.team_name}" />
+                  <img src="${teamLogo(team.team_logo)}" onerror="${LOGO_ONERROR}" alt="${team.team_name}" />
                   <span class="tname">${team.team_name}</span>
                 </td>
                 ${cols.map(c => { const cell = this._cellFor(team, c); return html`<td class="${cell.cls}">${cell.value}</td>`; })}
@@ -679,7 +680,7 @@ class SportsLiveStandingsCard extends LitElement {
                   @click="${() => this.showTeamDetails(team)}">
                 <td><div class="rank-cell"><div class="rank-num">${team.rank}</div></div></td>
                 <td class="team-cell">
-                  <img src="${team.team_logo}" alt="${team.team_name}" />
+                  <img src="${teamLogo(team.team_logo)}" onerror="${LOGO_ONERROR}" alt="${team.team_name}" />
                   <span class="tname">${team.team_name}</span>
                 </td>
                 ${cols.map(c => { const cell = this._cellFor(team, c); return html`<td class="${cell.cls}">${cell.value}</td>`; })}

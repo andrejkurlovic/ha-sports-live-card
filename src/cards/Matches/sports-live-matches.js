@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 import { openModal, closeModal, esc } from "../../modal-helper.js";
+import { teamLogo as resolveTeamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveTodayMatchesCard extends LitElement {
   static get properties() {
@@ -453,12 +454,12 @@ class SportsLiveTodayMatchesCard extends LitElement {
                   </div>
                   <div class="match-teams">
                     <div class="match-team">
-                      <img src="${match.home_logo}" alt="${match.home_team}" />
+                      <img src="${resolveTeamLogo(match.home_logo)}" onerror="${LOGO_ONERROR}" alt="${match.home_team}" />
                       <span class="name ${homeWinner === true ? 'winner' : (homeWinner === false ? 'loser' : '')}">${match.home_team}</span>
                       <span class="score ${homeWinner === true ? 'winner' : (homeWinner === false ? 'loser' : '')}">${this._matchScore(match, 'home')}</span>
                     </div>
                     <div class="match-team">
-                      <img src="${match.away_logo}" alt="${match.away_team}" />
+                      <img src="${resolveTeamLogo(match.away_logo)}" onerror="${LOGO_ONERROR}" alt="${match.away_team}" />
                       <span class="name ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${match.away_team}</span>
                       <span class="score ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${this._matchScore(match, 'away')}</span>
                     </div>
@@ -509,12 +510,12 @@ class SportsLiveTodayMatchesCard extends LitElement {
       <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
         <h3 style="margin:0 0 20px;font-size:22px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${esc(tx('popup.match_details'))}</h3>
         <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:24px;">
-          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(m.home_logo)}" alt="${esc(m.home_team)}" />
+          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(resolveTeamLogo(m.home_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.home_team)}" />
           <div style="text-align:center;">
             <div style="font-size:38px;font-weight:900;letter-spacing:-0.04em;line-height:1;">${esc(m.home_score ?? '-')} <span style="opacity:0.4;">-</span> ${esc(m.away_score ?? '-')}</div>
             <div style="font-size:12px;color:var(--p-sub);margin-top:8px;font-weight:600;">${esc(m.clock ?? m.status ?? '')}</div>
           </div>
-          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(m.away_logo)}" alt="${esc(m.away_team)}" />
+          <img style="width:64px;height:64px;object-fit:contain;" src="${esc(resolveTeamLogo(m.away_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.away_team)}" />
         </div>
         <p style="text-align:center;color:var(--p-muted);font-size:14px;margin:0 0 20px;"><strong>${esc(m.home_team)}</strong> vs <strong>${esc(m.away_team)}</strong></p>
         <div id="matches-info-container"></div>

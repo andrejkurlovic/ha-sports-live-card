@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 import { openModal, closeModal, esc } from "../../modal-helper.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveTeamNextCard extends LitElement {
   static get properties() {
@@ -545,8 +546,8 @@ class SportsLiveTeamNextCard extends LitElement {
     return html`
       <ha-card class="${isLive ? 'live' : ''}">
         <div class="bg-logos">
-          <div class="bg-logo home"><img src="${match.home_logo}" alt="" loading="lazy"></div>
-          <div class="bg-logo away"><img src="${match.away_logo}" alt="" loading="lazy"></div>
+          ${match.home_logo ? html`<div class="bg-logo home"><img src="${match.home_logo}" alt="" loading="lazy"></div>` : ''}
+          ${match.away_logo ? html`<div class="bg-logo away"><img src="${match.away_logo}" alt="" loading="lazy"></div>` : ''}
         </div>
         <div class="hero-bg"></div>
 
@@ -565,7 +566,7 @@ class SportsLiveTeamNextCard extends LitElement {
         <div class="scoreboard">
           <div class="team-side home">
             <div class="team-logo-wrap">
-              <img class="team-logo-big" src="${match.home_logo}" alt="${match.home_team}" />
+              <img class="team-logo-big" src="${teamLogo(match.home_logo)}" onerror="${LOGO_ONERROR}" alt="${match.home_team}" />
             </div>
             <div class="team-name-big">${match.home_team}</div>
             ${!this.hideRecords ? this._renderRecord(match.home_record) : ''}
@@ -583,7 +584,7 @@ class SportsLiveTeamNextCard extends LitElement {
 
           <div class="team-side away">
             <div class="team-logo-wrap">
-              <img class="team-logo-big" src="${match.away_logo}" alt="${match.away_team}" />
+              <img class="team-logo-big" src="${teamLogo(match.away_logo)}" onerror="${LOGO_ONERROR}" alt="${match.away_team}" />
             </div>
             <div class="team-name-big">${match.away_team}</div>
             ${!this.hideRecords ? this._renderRecord(match.away_record) : ''}
@@ -672,12 +673,12 @@ class SportsLiveTeamNextCard extends LitElement {
       <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
         <h3 style="margin:0 0 20px;font-size:22px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${esc(tx('popup.match_details'))}</h3>
         <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:24px;">
-          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(m.home_logo)}" alt="${esc(m.home_team)}" />
+          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(teamLogo(m.home_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.home_team)}" />
           <div style="text-align:center;">
             <div style="font-size:42px;font-weight:900;letter-spacing:-0.04em;line-height:1;">${esc(m.home_score ?? '-')} <span style="opacity:0.4;">-</span> ${esc(m.away_score ?? '-')}</div>
             <div style="font-size:12px;color:var(--p-sub);margin-top:8px;font-weight:600;">${esc(m.clock ?? m.status ?? '')}</div>
           </div>
-          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(m.away_logo)}" alt="${esc(m.away_team)}" />
+          <img style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));" src="${esc(teamLogo(m.away_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.away_team)}" />
         </div>
         ${statsGrid}
         <div id="team-events-container"></div>

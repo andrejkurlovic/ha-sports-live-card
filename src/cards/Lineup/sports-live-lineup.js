@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
+import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
 class SportsLiveLineupCard extends LitElement {
   static get properties() {
@@ -102,7 +103,7 @@ class SportsLiveLineupCard extends LitElement {
         <div class="teams-row">
           <div class="team-block">
             <div class="team-block-head">
-              <img src="${m.home_logo}" alt="${m.home_team}" />
+              <img src="${teamLogo(m.home_logo)}" onerror="${LOGO_ONERROR}" alt="${m.home_team}" />
               <div class="team-block-info">
                 <div class="team-block-name">${m.home_team}</div>
                 ${formationHome ? html`<div class="formation">${formationHome}</div>` : ''}
@@ -121,7 +122,7 @@ class SportsLiveLineupCard extends LitElement {
 
           <div class="team-block">
             <div class="team-block-head">
-              <img src="${m.away_logo}" alt="${m.away_team}" />
+              <img src="${teamLogo(m.away_logo)}" onerror="${LOGO_ONERROR}" alt="${m.away_team}" />
               <div class="team-block-info">
                 <div class="team-block-name">${m.away_team}</div>
                 ${formationAway ? html`<div class="formation">${formationAway}</div>` : ''}
