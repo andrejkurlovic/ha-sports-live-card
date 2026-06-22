@@ -54,6 +54,11 @@ the live match, or if nothing is live, the next upcoming one — and keeps it
 at the top. You can still scroll up/down to browse past or future matches;
 after ~18 seconds without touching the list it scrolls back to that match.
 
+`max_events_total` is also centered on that same match rather than counted
+from one end of the schedule: e.g. `max_events_total: 10` shows roughly 5
+matches before it and 4-5 after, regardless of `reverse_order` (which only
+flips display direction, not which matches are selected).
+
 **Entity filter:** `sensor.sports_live_matches_*` or `sensor.calciolive_all_*`
 
 ---

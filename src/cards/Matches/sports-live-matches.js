@@ -388,6 +388,36 @@ class SportsLiveTodayMatchesCard extends LitElement {
     return upcoming.length ? upcoming[0].m : null;
   }
 
+  // max_events_total used to just take the first N matches from one end of
+  // the list. Instead, window N matches centered on the focus match (live,
+  // or next upcoming) - roughly half before it chronologically, half after -
+  // so "show 10" means "5 before today/the live match, 4 after" rather than
+  // burning the whole budget on the oldest finished matches. `matches` must
+  // already be sorted chronologically ascending.
+  _windowAroundFocus(matches, focusMatch, maxTotal) {
+    if (!maxTotal || matches.length <= maxTotal) return matches;
+    const focusIdx = focusMatch ? matches.findIndex((m) => this._matchKeyOf(m) === this._matchKeyOf(focusMatch)) : -1;
+    if (focusIdx === -1) return matches.slice(0, maxTotal);
+
+    let before = Math.ceil((maxTotal - 1) / 2);
+    let after = maxTotal - 1 - before;
+    const availableBefore = focusIdx;
+    const availableAfter = matches.length - focusIdx - 1;
+
+    if (before > availableBefore) {
+      after += before - availableBefore;
+      before = availableBefore;
+    }
+    if (after > availableAfter) {
+      before += after - availableAfter;
+      after = availableAfter;
+    }
+    before = Math.min(before, availableBefore);
+    after = Math.min(after, availableAfter);
+
+    return matches.slice(focusIdx - before, focusIdx + after + 1);
+  }
+
   _onUserScroll() {
     this._lastScrollActivity = Date.now();
     if (this._focusIdleTimer) clearTimeout(this._focusIdleTimer);
@@ -419,12 +449,15 @@ class SportsLiveTodayMatchesCard extends LitElement {
       matches = matches.filter((m) => m.status !== "Full Time");
     }
     // Le date sono nel formato "dd/mm/yyyy hh:mm": new Date() non le parsa
-    // (restituisce Invalid Date), quindi usiamo _parseMatchDate. reverse_order
-    // ordina dalla più recente alla più vecchia.
+    // (restituisce Invalid Date), quindi usiamo _parseMatchDate. Always sort
+    // chronologically ascending here so the max_events_total window below is
+    // computed in real time order; reverse_order is applied afterwards, to
+    // the already-windowed result, since it's a display preference and
+    // shouldn't change which matches the window picks.
     matches = matches.slice().sort((a, b) => {
       const da = this._parseMatchDate(a.date) || new Date(0);
       const db = this._parseMatchDate(b.date) || new Date(0);
-      return this.reverseOrder ? db - da : da - db;
+      return da - db;
     });
 
     if (this.hidePastDays > 0) {
@@ -435,7 +468,9 @@ class SportsLiveTodayMatchesCard extends LitElement {
         return d ? d >= cutoff : true;
       });
     }
-    const limited = matches.slice(0, this.maxEventsTotal);
+    const windowFocus = this._computeFocusMatch(matches);
+    let limited = this._windowAroundFocus(matches, windowFocus, this.maxEventsTotal);
+    if (this.reverseOrder) limited = limited.slice().reverse();
 
     if (limited.length === 0) {
       this._pendingFocusKey = null;
