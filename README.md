@@ -49,6 +49,11 @@ type: custom:sports-live-matches
 entity: sensor.sports_live_matches_eng_1
 ```
 
+The list automatically scrolls to whichever match currently matters most —
+the live match, or if nothing is live, the next upcoming one — and keeps it
+at the top. You can still scroll up/down to browse past or future matches;
+after ~18 seconds without touching the list it scrolls back to that match.
+
 **Entity filter:** `sensor.sports_live_matches_*` or `sensor.calciolive_all_*`
 
 ---

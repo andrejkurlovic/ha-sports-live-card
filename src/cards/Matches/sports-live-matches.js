@@ -4,6 +4,12 @@ import { skinStyles, applySkin, resolveSkin } from "../../skins.js";
 import { openModal, closeModal, esc } from "../../modal-helper.js";
 import { teamLogo as resolveTeamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
 
+// How long the list must sit untouched before it snaps back to the live
+// (or next upcoming) match. Long enough to read a row you scrolled to,
+// short enough that a wall display recovers its "what matters now" view
+// on its own.
+const FOCUS_IDLE_MS = 18000;
+
 class SportsLiveTodayMatchesCard extends LitElement {
   static get properties() {
     return {
@@ -27,6 +33,10 @@ class SportsLiveTodayMatchesCard extends LitElement {
     this._toastVisible = false;
     this._toastVariant = 'goal';
     this._toastTimer = null;
+    this._pendingFocusKey = null;
+    this._appliedFocusKey = undefined;
+    this._lastScrollActivity = 0;
+    this._focusIdleTimer = null;
   }
 
   setConfig(config) {
@@ -70,6 +80,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     if (this._clockTick) { clearInterval(this._clockTick); this._clockTick = null; }
+    if (this._focusIdleTimer) { clearTimeout(this._focusIdleTimer); this._focusIdleTimer = null; }
     closeModal('sports-live-matches-popup');
     if (this._eventSubscriptions && Array.isArray(this._eventSubscriptions)) {
       this._eventSubscriptions.forEach(unsub => { if (typeof unsub === 'function') unsub(); });
@@ -359,6 +370,41 @@ class SportsLiveTodayMatchesCard extends LitElement {
     return match.venue && match.venue !== 'N/A' ? match.venue : '';
   }
 
+  _matchKeyOf(match) {
+    return `${match.home_team}_${match.away_team}`;
+  }
+
+  // Live match wins regardless of display sort order. With no live match,
+  // the chronologically soonest upcoming one — independent of reverse_order,
+  // which only controls display direction, not what "next" means.
+  _computeFocusMatch(matches) {
+    const live = matches.find((m) => m.state === 'in');
+    if (live) return live;
+    const upcoming = matches
+      .filter((m) => m.state === 'pre')
+      .map((m) => ({ m, d: this._parseMatchDate(m.date) }))
+      .filter((x) => x.d)
+      .sort((a, b) => a.d - b.d);
+    return upcoming.length ? upcoming[0].m : null;
+  }
+
+  _onUserScroll() {
+    this._lastScrollActivity = Date.now();
+    if (this._focusIdleTimer) clearTimeout(this._focusIdleTimer);
+    this._focusIdleTimer = setTimeout(() => {
+      this._scrollToFocus();
+      this._appliedFocusKey = this._pendingFocusKey;
+    }, FOCUS_IDLE_MS);
+  }
+
+  _scrollToFocus(smooth = true) {
+    if (!this.shadowRoot || !this._pendingFocusKey) return;
+    const container = this.shadowRoot.querySelector('.scroll-content');
+    const row = this.shadowRoot.querySelector(`[data-match-key="${this._pendingFocusKey}"]`);
+    if (!container || !row) return;
+    container.scrollTo({ top: Math.max(0, row.offsetTop - container.offsetTop - 4), behavior: smooth ? 'smooth' : 'auto' });
+  }
+
   render() {
     if (!this.hass || !this._config) return html``;
     const entityId = this._config.entity;
@@ -392,10 +438,14 @@ class SportsLiveTodayMatchesCard extends LitElement {
     const limited = matches.slice(0, this.maxEventsTotal);
 
     if (limited.length === 0) {
+      this._pendingFocusKey = null;
       return html`<ha-card class="empty">${this._t('generic.no_match')}</ha-card>`;
     }
 
     const liveCount = limited.filter(m => m.state === 'in').length;
+
+    const focusMatch = this._computeFocusMatch(limited);
+    this._pendingFocusKey = focusMatch ? this._matchKeyOf(focusMatch) : null;
 
     const grouped = [];
     let currentKey = null;
@@ -434,11 +484,11 @@ class SportsLiveTodayMatchesCard extends LitElement {
           </div>
         ` : ''}
 
-        <div class="scroll-content" style="max-height: ${scrollHeight}px;">
+        <div class="scroll-content" style="max-height: ${scrollHeight}px;" @scroll="${this._onUserScroll}">
           ${grouped.map(group => html`
             <div class="day-divider ${group.key.startsWith('⚡') ? 'today' : ''}">${group.key}</div>
             ${group.matches.map(match => {
-              const matchKey = `${match.home_team}_${match.away_team}`;
+              const matchKey = this._matchKeyOf(match);
               const isLive = match.state === 'in';
               const recent = this._recentEventMatches.get(matchKey);
               const homeWinner = this._isWinner(match, 'home');
@@ -448,6 +498,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
               const isUpcoming = match.state === 'pre';
               return html`
                 <div class="match-row ${isLive ? 'live' : ''} ${recent === 'goal' ? 'goal-pulse' : ''} ${recent === 'card' ? 'card-pulse' : ''}"
+                     data-match-key="${matchKey}"
                      @click="${() => this.showDetails(match)}">
                   <div class="match-time ${isLive ? 'live-time' : ''} ${match.state === 'post' ? 'ft' : ''}">
                     ${this._matchTimeLabel(match)}
@@ -493,6 +544,16 @@ class SportsLiveTodayMatchesCard extends LitElement {
   updated(changedProperties) {
     if (changedProperties.has('showPopup') || changedProperties.has('activeMatch')) {
       this.renderPopupToBody();
+    }
+    if (this._pendingFocusKey !== this._appliedFocusKey) {
+      const isFirstApply = this._appliedFocusKey === undefined;
+      const idleFor = this._lastScrollActivity ? Date.now() - this._lastScrollActivity : Infinity;
+      if (isFirstApply || idleFor >= FOCUS_IDLE_MS) {
+        this._scrollToFocus(!isFirstApply);
+        this._appliedFocusKey = this._pendingFocusKey;
+      }
+      // else: the user scrolled recently — the idle timer set up in
+      // _onUserScroll will catch up and apply the new focus once they stop.
     }
   }
 
