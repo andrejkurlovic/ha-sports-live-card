@@ -443,7 +443,12 @@ class SportsLiveMatchesCard extends LitElement {
     const container = this.shadowRoot.querySelector('.scroll-content');
     const row = this.shadowRoot.querySelector(`[data-match-key="${this._pendingFocusKey}"]`);
     if (!container || !row) return;
-    container.scrollTo({ top: Math.max(0, row.offsetTop - container.offsetTop - 4), behavior: smooth ? 'smooth' : 'auto' });
+    // .scroll-content has position:relative, which makes it match-row's
+    // offsetParent — row.offsetTop is already relative to the scrollable
+    // container's own top, so it must NOT also subtract container.offsetTop
+    // (that's the row's distance under the unrelated header above
+    // .scroll-content, not anything relative to the scroll position).
+    container.scrollTo({ top: Math.max(0, row.offsetTop - 4), behavior: smooth ? 'smooth' : 'auto' });
   }
 
   render() {

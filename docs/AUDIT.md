@@ -30,6 +30,32 @@ renames (jsdom, ad-hoc — this repo still has no permanent test suite); both
 register and render correctly, and the v2.27.0/v2.28.0 focus-tracking
 behavior still resolves to the same match key.
 
+## v2.28.2 — real bug found in "verified" v2.27.0 scroll math
+
+User reported the auto-scroll (v2.27.0) wasn't actually scrolling down to
+the live/next match. Root cause: `_scrollToFocus()` computed
+`row.offsetTop - container.offsetTop`. `.scroll-content` has
+`position: relative` in this card's CSS, which makes it `.match-row`'s
+`offsetParent` per the DOM spec — so `row.offsetTop` is *already* relative
+to the scroll container's own top. Subtracting `container.offsetTop` on
+top of that subtracted an unrelated value (`.scroll-content`'s own offset
+under the header, since `ha-card` is also `position: relative`),
+undershooting the target by roughly the header's height every time. Fixed:
+just `row.offsetTop` (minus a small cosmetic margin), no subtraction.
+
+**Why the original v2.27.0 verification didn't catch this**: jsdom has no
+layout engine — `offsetTop`/`offsetParent` aren't computed from real CSS
+there, they're always 0/null. The original "verification" script manually
+injected `offsetTop` values via `Object.defineProperty` to test the
+formula's arithmetic, which validated internal consistency but not whether
+the formula was the *correct* one for this DOM's actual `position:relative`
+chain — a CSS-driven bug that no amount of jsdom testing could have caught.
+Re-verified this fix the same way (confirmed jsdom's real offsetTop is 0,
+then exercised the corrected formula's arithmetic with an injected value),
+but the actual correctness claim now rests on CSS/offsetParent spec
+analysis, not a passing test. **Any future change to this scroll logic
+needs a real browser check, not just a jsdom run.**
+
 ## Deferred — affects every card, not just Matches
 
 These two are real and worth doing, but they're shared patterns across
