@@ -438,17 +438,47 @@ class SportsLiveMatchesCard extends LitElement {
     }, FOCUS_IDLE_MS);
   }
 
+  // Rewritten after two failed attempts at hand-computing a scrollTop from
+  // offsetTop/offsetParent — fragile, and not something verifiable from this
+  // environment (no real browser/layout engine available to check against).
+  // scrollIntoView() is the browser's own native answer to "bring this
+  // element into view inside whatever scrollable ancestor contains it": no
+  // manual offset math, no assumptions about which element is the
+  // offsetParent, and it's been a standard, stable Web API since long before
+  // any CSS positioning context this card might use. It only moves the
+  // nearest scrollable ancestor that actually needs to move (here,
+  // .scroll-content) — it won't scroll the outer HA dashboard unless this
+  // card itself is genuinely off-screen.
   _scrollToFocus(smooth = true) {
     if (!this.shadowRoot || !this._pendingFocusKey) return;
     const container = this.shadowRoot.querySelector('.scroll-content');
-    const row = this.shadowRoot.querySelector(`[data-match-key="${this._pendingFocusKey}"]`);
-    if (!container || !row) return;
-    // .scroll-content has position:relative, which makes it match-row's
-    // offsetParent — row.offsetTop is already relative to the scrollable
-    // container's own top, so it must NOT also subtract container.offsetTop
-    // (that's the row's distance under the unrelated header above
-    // .scroll-content, not anything relative to the scroll position).
-    container.scrollTo({ top: Math.max(0, row.offsetTop - 4), behavior: smooth ? 'smooth' : 'auto' });
+    let row;
+    try {
+      row = this.shadowRoot.querySelector(`[data-match-key="${CSS.escape(this._pendingFocusKey)}"]`);
+    } catch (err) {
+      row = null;
+    }
+    if (!container || !row) {
+      console.debug('[sports-live-matches] scroll-to-focus skipped: missing container or row', {
+        hasContainer: !!container, hasRow: !!row, key: this._pendingFocusKey,
+      });
+      return;
+    }
+    // Wait two animation frames so the browser has fully committed and
+    // painted whatever layout Lit just patched into the DOM before scrolling
+    // - calling scrollIntoView synchronously right after a DOM patch can
+    // measure against stale layout in some engines.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        row.scrollIntoView({ block: 'start', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+        console.debug('[sports-live-matches] scrolled to focus', {
+          key: this._pendingFocusKey,
+          containerScrollTop: container.scrollTop,
+          containerScrollHeight: container.scrollHeight,
+          containerClientHeight: container.clientHeight,
+        });
+      });
+    });
   }
 
   render() {

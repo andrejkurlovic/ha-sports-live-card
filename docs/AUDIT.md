@@ -56,6 +56,26 @@ but the actual correctness claim now rests on CSS/offsetParent spec
 analysis, not a passing test. **Any future change to this scroll logic
 needs a real browser check, not just a jsdom run.**
 
+## v2.28.3 — replaced manual scroll math with scrollIntoView entirely
+
+User reported v2.28.2 still didn't actually reach the live/next match. No
+browser/devtools access is available in this environment to inspect real
+layout, so rather than guess at a third manual offset formula,
+`_scrollToFocus()` was rewritten to use `Element.scrollIntoView({ block:
+'start', inline: 'nearest', behavior })` on the row directly. This is the
+standard browser API for "bring this element into view inside whatever
+scrollable ancestor contains it" — it requires no offsetTop/offsetParent
+math and isn't sensitive to this card's CSS `position` choices at all,
+eliminating the entire bug class both prior versions hit. Wrapped in a
+double `requestAnimationFrame` so it runs after the browser has fully
+committed layout for whatever Lit just patched. Added `console.debug`
+diagnostics (row/container found or not, resulting `scrollTop`/
+`scrollHeight`/`clientHeight`) specifically so that if this is *still*
+wrong, the next debugging pass has real browser data to work from instead
+of more guessing. Also hardened the row lookup with `CSS.escape()` on the
+match-key attribute selector, in case a team name ever contains a
+character that would otherwise break the selector.
+
 ## Deferred — affects every card, not just Matches
 
 These two are real and worth doing, but they're shared patterns across

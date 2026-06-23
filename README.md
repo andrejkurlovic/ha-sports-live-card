@@ -59,6 +59,12 @@ from one end of the schedule: e.g. `max_events_total: 10` shows roughly 5
 matches before it and 4-5 after, regardless of `reverse_order` (which only
 flips display direction, not which matches are selected).
 
+If the auto-scroll ever doesn't land where expected, open your browser's
+devtools console — it logs `[sports-live-matches] scrolled to focus` (or
+`scroll-to-focus skipped`) with the match key and the scroll container's
+`scrollTop`/`scrollHeight`/`clientHeight` every time it runs, which is
+enough to diagnose without guessing.
+
 **Entity filter:** `sensor.sports_live_matches_*` or `sensor.calciolive_all_*`
 
 ---

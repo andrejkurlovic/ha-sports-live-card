@@ -1,6 +1,6 @@
 {
   "name": "sports-live-card",
-  "version": "2.28.2",
+  "version": "2.28.3",
   "description": "Lovelace cards for the Sports Live (ESPN) Home Assistant integration — multi-sport standings, matches, team tracker, live game card, bracket, news and timeline.",
   "main": "webpack.config.js",
   "scripts": {
