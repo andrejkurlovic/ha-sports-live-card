@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-class SportsLiveTodayMatchesEditor extends LitElement {
+class SportsLiveMatchesEditor extends LitElement {
   static get properties() {
     return {
       _config: { type: Object },
@@ -278,4 +278,4 @@ class SportsLiveTodayMatchesEditor extends LitElement {
   }
 }
 
-customElements.define('sports-live-matches-editor', SportsLiveTodayMatchesEditor);
+customElements.define('sports-live-matches-editor', SportsLiveMatchesEditor);

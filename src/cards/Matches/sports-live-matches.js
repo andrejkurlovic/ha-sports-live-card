@@ -10,7 +10,18 @@ import { teamLogo as resolveTeamLogo, LOGO_ONERROR } from "../../logo-fallback.j
 // on its own.
 const FOCUS_IDLE_MS = 18000;
 
-class SportsLiveTodayMatchesCard extends LitElement {
+// How long a goal/card row keeps its pulse animation, and how long an
+// event toast stays on screen, after a live sports_live_score/discipline
+// event fires for it.
+const RECENT_EVENT_HIGHLIGHT_MS = 5000;
+const TOAST_VISIBLE_MS = 4000;
+
+// Shows the full schedule (past + upcoming), not just today's matches —
+// renamed from SportsLiveTodayMatchesCard, a leftover from the pre-fork
+// calcio-live naming. The registered element name ("sports-live-matches")
+// and YAML `type:` were already correct; only the internal class name
+// was stale.
+class SportsLiveMatchesCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -160,7 +171,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
     setTimeout(() => {
       this._recentEventMatches.delete(matchKey);
       this.requestUpdate();
-    }, 5000);
+    }, RECENT_EVENT_HIGHLIGHT_MS);
 
     if (this.showEventToasts) {
       this._showEventToast(eventType, eventData);
@@ -194,7 +205,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
     this._toastTimer = setTimeout(() => {
       this._toastVisible = false;
       this.requestUpdate();
-    }, 4000);
+    }, TOAST_VISIBLE_MS);
     this.requestUpdate();
   }
 
@@ -448,8 +459,8 @@ class SportsLiveTodayMatchesCard extends LitElement {
     if (!this.showFinishedMatches) {
       matches = matches.filter((m) => m.status !== "Full Time");
     }
-    // Le date sono nel formato "dd/mm/yyyy hh:mm": new Date() non le parsa
-    // (restituisce Invalid Date), quindi usiamo _parseMatchDate. Always sort
+    // Dates come as "dd/mm/yyyy hh:mm" — new Date() can't parse that format
+    // (returns Invalid Date), so we use _parseMatchDate instead. Always sort
     // chronologically ascending here so the max_events_total window below is
     // computed in real time order; reverse_order is applied afterwards, to
     // the already-windowed result, since it's a display preference and
@@ -980,7 +991,7 @@ class SportsLiveTodayMatchesCard extends LitElement {
   }
 }
 
-customElements.define("sports-live-matches", SportsLiveTodayMatchesCard);
+customElements.define("sports-live-matches", SportsLiveMatchesCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
