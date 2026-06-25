@@ -438,17 +438,16 @@ class SportsLiveMatchesCard extends LitElement {
     }, FOCUS_IDLE_MS);
   }
 
-  // Rewritten after two failed attempts at hand-computing a scrollTop from
-  // offsetTop/offsetParent — fragile, and not something verifiable from this
-  // environment (no real browser/layout engine available to check against).
-  // scrollIntoView() is the browser's own native answer to "bring this
-  // element into view inside whatever scrollable ancestor contains it": no
-  // manual offset math, no assumptions about which element is the
-  // offsetParent, and it's been a standard, stable Web API since long before
-  // any CSS positioning context this card might use. It only moves the
-  // nearest scrollable ancestor that actually needs to move (here,
-  // .scroll-content) — it won't scroll the outer HA dashboard unless this
-  // card itself is genuinely off-screen.
+  // Third rewrite. scrollIntoView() turned out to be the wrong tool: by
+  // default it walks the *entire* chain of scrollable ancestors and aligns
+  // the target in each one, so it was scrolling the whole HA dashboard, not
+  // just this card's own list - confirmed by the user, not guessed. What we
+  // actually need is "move only this one specific scrollable element,
+  // never any ancestor." getBoundingClientRect() gives real on-screen pixel
+  // positions that already account for every ancestor's current scroll
+  // offset, with no offsetParent/CSS-position ambiguity at all - so the
+  // delta between the row's and the container's rect is exactly how far
+  // container.scrollTop needs to move, and nothing else is ever touched.
   _scrollToFocus(smooth = true) {
     if (!this.shadowRoot || !this._pendingFocusKey) return;
     const container = this.shadowRoot.querySelector('.scroll-content');
@@ -465,14 +464,18 @@ class SportsLiveMatchesCard extends LitElement {
       return;
     }
     // Wait two animation frames so the browser has fully committed and
-    // painted whatever layout Lit just patched into the DOM before scrolling
-    // - calling scrollIntoView synchronously right after a DOM patch can
-    // measure against stale layout in some engines.
+    // painted whatever layout Lit just patched into the DOM before measuring
+    // - measuring synchronously right after a DOM patch can read stale
+    // layout in some engines.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        row.scrollIntoView({ block: 'start', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+        const containerRect = container.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        const targetScrollTop = Math.max(0, container.scrollTop + (rowRect.top - containerRect.top) - 4);
+        container.scrollTo({ top: targetScrollTop, behavior: smooth ? 'smooth' : 'auto' });
         console.debug('[sports-live-matches] scrolled to focus', {
           key: this._pendingFocusKey,
+          targetScrollTop,
           containerScrollTop: container.scrollTop,
           containerScrollHeight: container.scrollHeight,
           containerClientHeight: container.clientHeight,

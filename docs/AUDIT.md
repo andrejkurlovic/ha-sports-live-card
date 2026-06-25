@@ -76,6 +76,32 @@ of more guessing. Also hardened the row lookup with `CSS.escape()` on the
 match-key attribute selector, in case a team name ever contains a
 character that would otherwise break the selector.
 
+## v2.28.4 — scrollIntoView was scrolling the whole HA dashboard, not just the card
+
+User confirmed: the card's list did scroll correctly under v2.28.3, but it
+*also* scrolled the entire outer HA dashboard page. Root cause:
+`scrollIntoView()` doesn't stop at the nearest scrollable ancestor — per
+spec it walks the **entire chain** of scrollable ancestors and aligns the
+target in each one. `.scroll-content` isn't the only scrollable thing on
+the page; the outer dashboard view scrolls too, so `scrollIntoView` was
+moving both. The right tool for "scroll only this one widget's internal
+list, never the page around it" isn't `scrollIntoView` at all — it's
+computing the delta directly and calling `scrollTo` only on the one
+container we own.
+
+Rewrote `_scrollToFocus()` a third time: `container.getBoundingClientRect()`
+and `row.getBoundingClientRect()` give real on-screen pixel positions that
+already account for every ancestor's current scroll offset (no
+offsetParent/CSS-position ambiguity, unlike the v2.28.2 approach) — the
+difference between the two `top` values is exactly how far
+`container.scrollTop` needs to move, and `container.scrollTo(...)` is the
+only scroll call made. Verified via jsdom with explicit checks that
+`window.scrollTo` and `document.body.scrollTop` are never touched, in
+addition to checking the arithmetic. This is provably scoped to one
+element now, not just "probably fine" — the previous two bugs were both
+cases of trusting an API's behavior without checking what it actually
+touches.
+
 ## Deferred — affects every card, not just Matches
 
 These two are real and worth doing, but they're shared patterns across
