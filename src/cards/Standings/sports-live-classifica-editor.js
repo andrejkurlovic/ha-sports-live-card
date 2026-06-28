@@ -93,7 +93,7 @@ class SportsLiveClassificaCardEditor extends LitElement {
 
   _entityChanged(ev) {
     if (!this._config) return;
-    const value = ev.target.value;
+    const value = ev.detail.value;
     if (value === this._config.entity) return;
     this._fireConfigChanged({ ...this._config, entity: value });
   }
@@ -181,12 +181,13 @@ class SportsLiveClassificaCardEditor extends LitElement {
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity</label>
-          <select @change=${this._entityChanged}>
-            ${!entityInList ? html`<option value="${currentEntity}" selected>${currentEntity || '— select —'}</option>` : ''}
-            ${this.entities.map(e => html`
-              <option value="${e}" ?selected=${e === currentEntity}>${e}</option>
-            `)}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${currentEntity}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Settings</h3>

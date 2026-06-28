@@ -68,7 +68,7 @@ class SportsLiveGameEditor extends LitElement {
   }
 
   _entityChanged(ev) {
-    const v = ev.target.value;
+    const v = ev.detail.value;
     if (v !== this._config.entity) this._fire({ ...this._config, entity: v });
   }
 
@@ -96,10 +96,13 @@ class SportsLiveGameEditor extends LitElement {
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (next_match or team sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${!inList ? html`<option value="${cur}" selected>${cur || "— select —"}</option>` : ""}
-            ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${cur}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Display</h3>

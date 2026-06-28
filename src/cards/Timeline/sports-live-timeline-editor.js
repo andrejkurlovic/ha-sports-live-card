@@ -50,7 +50,7 @@ class SportsLiveTimelineEditor extends LitElement {
 
   _entityChanged(ev) {
     if (!this._config) return;
-    const value = ev.target.value;
+    const value = ev.detail.value;
     if (value === this._config.entity) return;
     this._fireConfigChanged({ ...this._config, entity: value });
   }
@@ -106,10 +106,13 @@ class SportsLiveTimelineEditor extends LitElement {
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (team next_match sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${!inList ? html`<option value="${cur}" selected>${cur || '— select —'}</option>` : ''}
-            ${this.entities.map(e => html`<option value="${e}" ?selected=${e === cur}>${e}</option>`)}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${cur}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
           <div class="hint" style="margin-top: 4px;">Events are published during the match.</div>
         </div>
 

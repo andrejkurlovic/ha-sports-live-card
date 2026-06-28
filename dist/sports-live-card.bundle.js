@@ -580,17 +580,18 @@
         letter-spacing: 0.05em;
         color: var(--secondary-text-color);
       }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities(),(e.has("_config")||e.has("hass"))&&this._config&&this._config.entity&&this._fetchGroups()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_groupChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.selected_group&&this._fireConfigChanged({...this._config,selected_group:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_textChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.standings_groups)})).sort())}_fetchGroups(){const e=this._config&&this._config.entity;if(!this.hass||!e)return void(this.groups=[]);const t=this.hass.states[e];t&&t.attributes&&t.attributes.standings_groups?this.groups=t.attributes.standings_groups.map((e=>e.name)):this.groups=[]}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities(),(e.has("_config")||e.has("hass"))&&this._config&&this._config.entity&&this._fetchGroups()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_groupChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.selected_group&&this._fireConfigChanged({...this._config,selected_group:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_textChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.standings_groups)})).sort())}_fetchGroups(){const e=this._config&&this._config.entity;if(!this.hass||!e)return void(this.groups=[]);const t=this.hass.states[e];t&&t.attributes&&t.attributes.standings_groups?this.groups=t.attributes.standings_groups.map((e=>e.name)):this.groups=[]}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`
-              <option value="${t}" ?selected=${t===e}>${t}</option>
-            `))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Settings</h3>
@@ -1092,17 +1093,18 @@
         color: var(--secondary-text-color);
         margin-top: -4px;
       }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`
-              <option value="${t}" ?selected=${t===e}>${t}</option>
-            `))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Settings</h3>
@@ -2034,17 +2036,18 @@
         letter-spacing: 0.05em;
         color: var(--secondary-text-color);
       }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&"next_match"in t})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`
-              <option value="${t}" ?selected=${t===e}>${t}</option>
-            `))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Settings</h3>
@@ -2312,15 +2315,18 @@
         box-sizing: border-box;
       }
       h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.articles)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.articles)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (news sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`<option value="${t}" ?selected=${t===e}>${t}</option>`))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Settings</h3>
@@ -2643,15 +2649,18 @@
       }
       h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
       .hint { font-size: 12px; color: var(--secondary-text-color); }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (team next_match sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`<option value="${t}" ?selected=${t===e}>${t}</option>`))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
           <div class="hint" style="margin-top: 4px;">Lineups are published shortly before kick-off.</div>
         </div>
 
@@ -2951,15 +2960,18 @@
       }
       h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
       .hint { font-size: 12px; color: var(--secondary-text-color); }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_numberChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=parseInt(t.value,10);isNaN(i)||this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (team next_match sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`<option value="${t}" ?selected=${t===e}>${t}</option>`))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
           <div class="hint" style="margin-top: 4px;">Events are published during the match.</div>
         </div>
 
@@ -3731,15 +3743,18 @@
       }
       h3 { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--secondary-text-color); }
       .hint { font-size: 12px; color: var(--secondary-text-color); }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.target.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.rounds)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fireConfigChanged(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){if(!this._config)return;const t=e.detail.value;t!==this._config.entity&&this._fireConfigChanged({...this._config,entity:t})}_switchChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_selectChanged(e){if(!this._config)return;const t=e.target;if(!t.dataset||!t.dataset.configValue)return;const a=t.dataset.configValue,i=t.value;this._config[a]!==i&&this._fireConfigChanged({...this._config,[a]:i})}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.rounds)})).sort())}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
-          <label class="field-label">Entity (standings bracket sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`<option value="${t}" ?selected=${t===e}>${t}</option>`))}
-          </select>
+          <label class="field-label">Entity (bracket sensor)</label>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
           <div class="hint" style="margin-top: 4px;">Available for Champions League, Europa League, Conference League, FIFA World Cup and other cups.</div>
         </div>
 
@@ -4215,15 +4230,18 @@
         color: var(--primary-text-color, #000); box-sizing: border-box;
       }
       select:focus { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -1px; }
-    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}_fire(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){const t=e.target.value;t!==this._config.entity&&this._fire({...this._config,entity:t})}_selectChanged(e){const t=e.target.dataset.configValue,a=e.target.value;t&&a!==String(this._config[t]??"")&&this._fire({...this._config,[t]:a})}_switchChanged(e){const t=e.target;if(!t.dataset?.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fire({...this._config,[a]:i})}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"",t=e&&this.entities.includes(e);return U`
+    `}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config={...e}}get config(){return this._config}updated(e){e.has("hass")&&this._fetchEntities()}_fetchEntities(){this.hass&&(this.entities=Object.keys(this.hass.states).filter((e=>{if(!e.startsWith("sensor."))return!1;const t=this.hass.states[e]?.attributes;return void 0!==t?.sport&&Array.isArray(t?.matches)})).sort())}_fire(e){this._config=e,this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0})),this.requestUpdate()}_entityChanged(e){const t=e.detail.value;t!==this._config.entity&&this._fire({...this._config,entity:t})}_selectChanged(e){const t=e.target.dataset.configValue,a=e.target.value;t&&a!==String(this._config[t]??"")&&this._fire({...this._config,[t]:a})}_switchChanged(e){const t=e.target;if(!t.dataset?.configValue)return;const a=t.dataset.configValue,i=t.checked;this._config[a]!==i&&this._fire({...this._config,[a]:i})}render(){if(!this._config||!this.hass)return U``;const e=this._config.entity||"";return e&&this.entities.includes(e),U`
       <div class="card-config">
         <h3>Sensor</h3>
         <div>
           <label class="field-label">Entity (next_match or team sensor)</label>
-          <select @change=${this._entityChanged}>
-            ${t?"":U`<option value="${e}" selected>${e||"— select —"}</option>`}
-            ${this.entities.map((t=>U`<option value="${t}" ?selected=${t===e}>${t}</option>`))}
-          </select>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${e}
+            .includeEntities=${this.entities}
+            @value-changed=${this._entityChanged}
+            allow-custom-entity
+          ></ha-entity-picker>
         </div>
 
         <h3>Display</h3>
