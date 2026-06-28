@@ -3074,38 +3074,46 @@
           ${i}
         </svg>
       </div>
-    `}_renderTree(e){const t=t=>{const a=e.filter((e=>e.size===t));if(0===a.length)return null;return a.find((e=>"Knockout Playoffs"!==e.name&&"Preliminary Round"!==e.name))||a[a.length-1]},a=e.find((e=>"Knockout Playoffs"===e.name)),i=t(8),s=t(4),n=t(2),o=t(1),r=e=>{if(!e)return{left:[],right:[]};const t=e.ties||[],a=Math.ceil(t.length/2);return{left:t.slice(0,a),right:t.slice(a)}},l=r(i),c=r(s),d=r(n),p=this.treeShowPlayoffs?r(a):null,h=o?o.ties[0]:null;return U`
+    `}_renderTree(e){const t=t=>{const a=e.filter((e=>e.size===t));if(0===a.length)return null;return a.find((e=>"Knockout Playoffs"!==e.name&&"Preliminary Round"!==e.name))||a[a.length-1]},a=e.find((e=>"Knockout Playoffs"===e.name)),i=t(16),s=t(8),n=t(4),o=t(2),r=t(1),l=e=>{if(!e)return{left:[],right:[]};const t=e.ties||[],a=Math.ceil(t.length/2);return{left:t.slice(0,a),right:t.slice(a)}},c=l(i),d=l(s),p=l(n),h=l(o),g=this.treeShowPlayoffs?l(a):null,u=r?r.ties[0]:null;return U`
       <div class="tree-wrap">
         <div class="tree">
           <div class="tree-half left">
-            ${p&&p.left.length?U`
-              ${this._renderTreeRound(p.left,"round.knockout_playoffs")}
-              ${l.left.length?this._renderArrows(l.left.length,"left"):""}
+            ${c.left.length?U`
+              ${this._renderTreeRound(c.left,"round.r32")}
+              ${d.left.length?this._renderArrows(d.left.length,"left"):""}
             `:""}
-            ${l.left.length?this._renderTreeRound(l.left,"round.r16"):""}
-            ${l.left.length&&c.left.length?this._renderArrows(c.left.length,"left"):""}
-            ${c.left.length?this._renderTreeRound(c.left,"round.quarterfinals"):""}
-            ${c.left.length&&d.left.length?this._renderArrows(d.left.length,"left"):""}
-            ${d.left.length?this._renderTreeRound(d.left,"round.semifinals"):""}
-            ${d.left.length?this._renderArrows(1,"left"):""}
+            ${g&&g.left.length?U`
+              ${this._renderTreeRound(g.left,"round.knockout_playoffs")}
+              ${d.left.length?this._renderArrows(d.left.length,"left"):""}
+            `:""}
+            ${d.left.length?this._renderTreeRound(d.left,"round.r16"):""}
+            ${d.left.length&&p.left.length?this._renderArrows(p.left.length,"left"):""}
+            ${p.left.length?this._renderTreeRound(p.left,"round.quarterfinals"):""}
+            ${p.left.length&&h.left.length?this._renderArrows(h.left.length,"left"):""}
+            ${h.left.length?this._renderTreeRound(h.left,"round.semifinals"):""}
+            ${h.left.length?this._renderArrows(1,"left"):""}
           </div>
 
           <div class="tree-center">
             <div class="trophy">🏆</div>
             <div class="trophy-label">${this._t("round.final")}</div>
-            ${h?U`<div class="final-tie-wrap">${this._renderMiniTie(h)}</div>`:U`<div class="final-placeholder">${this._t("bracket.tbd")}</div>`}
+            ${u?U`<div class="final-tie-wrap">${this._renderMiniTie(u)}</div>`:U`<div class="final-placeholder">${this._t("bracket.tbd")}</div>`}
           </div>
 
           <div class="tree-half right">
-            ${d.right.length?this._renderArrows(1,"right"):""}
-            ${d.right.length?this._renderTreeRound(d.right,"round.semifinals"):""}
-            ${d.right.length&&c.right.length?this._renderArrows(d.right.length,"right"):""}
-            ${c.right.length?this._renderTreeRound(c.right,"round.quarterfinals"):""}
-            ${c.right.length&&l.right.length?this._renderArrows(c.right.length,"right"):""}
-            ${l.right.length?this._renderTreeRound(l.right,"round.r16"):""}
-            ${p&&p.right.length?U`
-              ${l.right.length?this._renderArrows(l.right.length,"right"):""}
-              ${this._renderTreeRound(p.right,"round.knockout_playoffs")}
+            ${h.right.length?this._renderArrows(1,"right"):""}
+            ${h.right.length?this._renderTreeRound(h.right,"round.semifinals"):""}
+            ${h.right.length&&p.right.length?this._renderArrows(h.right.length,"right"):""}
+            ${p.right.length?this._renderTreeRound(p.right,"round.quarterfinals"):""}
+            ${p.right.length&&d.right.length?this._renderArrows(p.right.length,"right"):""}
+            ${d.right.length?this._renderTreeRound(d.right,"round.r16"):""}
+            ${g&&g.right.length?U`
+              ${d.right.length?this._renderArrows(d.right.length,"right"):""}
+              ${this._renderTreeRound(g.right,"round.knockout_playoffs")}
+            `:""}
+            ${c.right.length?U`
+              ${d.right.length?this._renderArrows(d.right.length,"right"):""}
+              ${this._renderTreeRound(c.right,"round.r32")}
             `:""}
           </div>
         </div>

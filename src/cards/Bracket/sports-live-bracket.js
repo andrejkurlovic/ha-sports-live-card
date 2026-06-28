@@ -235,6 +235,7 @@ class SportsLiveBracketCard extends LitElement {
       return exact || candidates[candidates.length - 1];
     };
     const playoffsRound = rounds.find(r => r.name === 'Knockout Playoffs');
+    const r32 = findRound(16);
     const r16 = findRound(8);
     const qf = findRound(4);
     const sf = findRound(2);
@@ -246,6 +247,7 @@ class SportsLiveBracketCard extends LitElement {
       const mid = Math.ceil(ties.length / 2);
       return { left: ties.slice(0, mid), right: ties.slice(mid) };
     };
+    const r32Split = split(r32);
     const r16Split = split(r16);
     const qfSplit = split(qf);
     const sfSplit = split(sf);
@@ -256,6 +258,10 @@ class SportsLiveBracketCard extends LitElement {
       <div class="tree-wrap">
         <div class="tree">
           <div class="tree-half left">
+            ${r32Split.left.length ? html`
+              ${this._renderTreeRound(r32Split.left, 'round.r32')}
+              ${r16Split.left.length ? this._renderArrows(r16Split.left.length, 'left') : ''}
+            ` : ''}
             ${playoffsSplit && playoffsSplit.left.length ? html`
               ${this._renderTreeRound(playoffsSplit.left, 'round.knockout_playoffs')}
               ${r16Split.left.length ? this._renderArrows(r16Split.left.length, 'left') : ''}
@@ -287,6 +293,10 @@ class SportsLiveBracketCard extends LitElement {
             ${playoffsSplit && playoffsSplit.right.length ? html`
               ${r16Split.right.length ? this._renderArrows(r16Split.right.length, 'right') : ''}
               ${this._renderTreeRound(playoffsSplit.right, 'round.knockout_playoffs')}
+            ` : ''}
+            ${r32Split.right.length ? html`
+              ${r16Split.right.length ? this._renderArrows(r16Split.right.length, 'right') : ''}
+              ${this._renderTreeRound(r32Split.right, 'round.r32')}
             ` : ''}
           </div>
         </div>
