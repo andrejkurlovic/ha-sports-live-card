@@ -2,6 +2,7 @@ import { LitElement, html, svg, css } from "lit-element";
 import { t, resolveLang } from "../../i18n.js";
 import { skinStyles, applySkin } from "../../skins.js";
 import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
+import { esc, openModal, closeModal } from "../../modal-helper.js";
 
 class SportsLiveBracketCard extends LitElement {
   static get properties() {
@@ -60,6 +61,87 @@ class SportsLiveBracketCard extends LitElement {
     return String(s);
   }
 
+  _isLight() {
+    return this._config && this._config.skin === 'light';
+  }
+
+  _showTieDetail(tie) {
+    const a = tie.team_a || {};
+    const b = tie.team_b || {};
+    const single = tie.single;
+    const leg1 = tie.leg1;
+    const leg2 = tie.leg2;
+    const winner = tie.winner_team;
+
+    const fmtDate = (iso) => {
+      if (!iso) return '';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch { return iso; }
+    };
+
+    const legRow = (leg, labelA, labelB) => {
+      if (!leg) return '';
+      const sA = leg.home_team === a.name ? leg.home_score : leg.away_score;
+      const sB = leg.home_team === b.name ? leg.home_score : leg.away_score;
+      const sAstr = sA !== null && sA !== undefined ? sA : '–';
+      const sBstr = sB !== null && sB !== undefined ? sB : '–';
+      const stateLabel = leg.state === 'in'
+        ? `<span style="color:#ef4444;font-weight:800;">⬤ LIVE ${esc(leg.clock || '')} ${esc(leg.status_detail || '')}</span>`
+        : leg.state === 'post'
+          ? `<span style="color:#94a3b8;font-size:11px;">${esc(leg.status_detail || 'Full Time')}</span>`
+          : `<span style="color:#94a3b8;font-size:11px;">${esc(fmtDate(leg.date))}</span>`;
+      const venueHtml = leg.venue ? `<div style="color:#94a3b8;font-size:11px;margin-top:4px;">📍 ${esc(leg.venue)}</div>` : '';
+      return `
+        <div style="margin-bottom:12px;">
+          ${labelA ? `<div style="font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">${esc(labelA)}</div>` : ''}
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:6px;">
+            <span style="font-weight:700;font-size:15px;flex:1;text-align:right;">${esc(a.name || 'TBD')}</span>
+            <span style="font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:0.05em;background:rgba(255,255,255,0.07);padding:4px 14px;border-radius:8px;">${esc(String(sAstr))} – ${esc(String(sBstr))}</span>
+            <span style="font-weight:700;font-size:15px;flex:1;text-align:left;">${esc(b.name || 'TBD')}</span>
+          </div>
+          <div style="text-align:center;">${stateLabel}</div>
+          ${venueHtml}
+        </div>`;
+    };
+
+    const winnerHtml = winner
+      ? `<div style="margin-top:14px;padding:10px 16px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;text-align:center;">
+           🏆 <strong>${esc(winner)}</strong> ${tie.tied ? '(on penalties)' : 'advances'}
+         </div>`
+      : '';
+
+    const aggHtml = tie.aggregate
+      ? `<div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:6px;">Aggregate: <strong>${esc(tie.aggregate)}</strong></div>`
+      : '';
+
+    const roundLabel = (single && single.note) || (leg1 && leg1.note) || '';
+    const dateDisplay = single ? fmtDate(single.date) : (leg1 ? fmtDate(leg1.date) : '');
+
+    const inner = `
+      <div style="background:var(--p-bg);color:var(--p-text);border-radius:20px;padding:24px;width:min(92vw,420px);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:85vh;overflow-y:auto;">
+        <button onclick="document.getElementById('sl-bracket-popup').remove()" style="position:absolute;top:14px;right:14px;background:var(--p-panel);border:none;border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--p-text);display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+        ${roundLabel ? `<div style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;">${esc(roundLabel)}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px;">
+          ${a.logo ? `<img src="${esc(a.logo)}" style="width:40px;height:40px;object-fit:contain;" onerror="this.style.display='none'" />` : ''}
+          <div style="text-align:center;">
+            <div style="font-size:14px;font-weight:800;">${esc(a.name || 'TBD')} vs ${esc(b.name || 'TBD')}</div>
+            ${dateDisplay ? `<div style="font-size:11px;color:var(--p-sub);margin-top:2px;">${esc(dateDisplay)}</div>` : ''}
+          </div>
+          ${b.logo ? `<img src="${esc(b.logo)}" style="width:40px;height:40px;object-fit:contain;" onerror="this.style.display='none'" />` : ''}
+        </div>
+        <div style="border-top:1px solid var(--p-border);padding-top:14px;">
+          ${single ? legRow(single, '', '') : (legRow(leg1, '1st Leg', '') + legRow(leg2, '2nd Leg', ''))}
+        </div>
+        ${aggHtml}
+        ${winnerHtml}
+      </div>`;
+
+    const overlay = openModal('sl-bracket-popup', this._isLight(), () => closeModal('sl-bracket-popup'));
+    overlay.innerHTML = inner;
+  }
+
   _renderTie(tie) {
     const a = tie.team_a || {};
     const b = tie.team_b || {};
@@ -90,7 +172,7 @@ class SportsLiveBracketCard extends LitElement {
     const isPending = !leg1 && !single;
 
     return html`
-      <div class="tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''}">
+      <div class="tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} clickable" @click=${() => this._showTieDetail(tie)}>
         <div class="tie-row ${isAWinner ? 'winner' : ''} ${isBWinner ? 'loser' : ''}">
           <img src="${teamLogo(a.logo)}" onerror="${LOGO_ONERROR}" alt="${a.name}" />
           <span class="tname">${a.name || 'TBD'}</span>
@@ -153,7 +235,7 @@ class SportsLiveBracketCard extends LitElement {
     const abbrB = b.abbrev || (b.name ? b.name.substring(0, 3).toUpperCase() : 'TBD');
 
     return html`
-      <div class="mini-tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} ${isPending ? 'pending' : ''}">
+      <div class="mini-tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} ${isPending ? 'pending' : ''}" @click=${isPending ? null : () => this._showTieDetail(tie)} style="${isPending ? '' : 'cursor:pointer'}">
         <div class="mini-team ${isAW ? 'winner' : ''} ${isBW ? 'loser' : ''}">
           ${a.logo ? html`<img src="${a.logo}" alt="${a.name}" />` : html`<div class="logo-ph"></div>`}
           <span class="abbr">${abbrA}</span>
@@ -486,6 +568,9 @@ class SportsLiveBracketCard extends LitElement {
         padding: 10px 12px;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+      }
+      .tie.clickable {
+        cursor: pointer;
       }
       .tie:hover {
         border-color: var(--cl-accent);
