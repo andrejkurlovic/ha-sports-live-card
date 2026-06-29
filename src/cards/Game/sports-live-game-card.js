@@ -1,19 +1,14 @@
 import { LitElement, html, css } from "lit-element";
 import { skinStyles, applySkin } from "../../skins.js";
 import { teamLogo, LOGO_ONERROR } from "../../logo-fallback.js";
+import { esc, openModal, closeModal } from "../../modal-helper.js";
 
 class SportsLiveGameCard extends LitElement {
   static get properties() {
     return {
       hass: {},
       _config: {},
-      _popupOpen: { type: Boolean },
     };
-  }
-
-  constructor() {
-    super();
-    this._popupOpen = false;
   }
 
   setConfig(config) {
@@ -166,43 +161,56 @@ class SportsLiveGameCard extends LitElement {
     `;
   }
 
-  _renderPopup(match, eventUrl, homeColor, awayColor) {
-    if (!this._popupOpen) return "";
+  _showPopup(match, eventUrl, homeColor, awayColor) {
+    const isLight = this._config && this._config.skin === 'light';
     const broadcast = this._getBroadcast(match);
     const details = match.match_details || [];
-    return html`
-      <div class="popup-overlay"
-        @click="${(e) => { e.stopPropagation(); if (e.target === e.currentTarget) this._popupOpen = false; }}"
-      >
-        <div class="popup">
-          <div class="popup-header" style="background: linear-gradient(135deg, ${homeColor}, ${awayColor})">
-            <span class="popup-title">${match.home_team} vs ${match.away_team}</span>
-            <button class="popup-close" @click="${(e) => { e.stopPropagation(); this._popupOpen = false; }}">✕</button>
-          </div>
-          <div class="popup-body">
-            ${match.status_detail ? html`<div class="popup-row"><span class="popup-label">Status</span><span>${match.status_detail}</span></div>` : ""}
-            ${match.venue ? html`<div class="popup-row"><span class="popup-label">Venue</span><span>${match.venue}${match.venue_city ? `, ${match.venue_city}` : ""}</span></div>` : ""}
-            ${match.date ? html`<div class="popup-row"><span class="popup-label">Date</span><span>${match.date}</span></div>` : ""}
-            ${match.attendance ? html`<div class="popup-row"><span class="popup-label">Attendance</span><span>${Number(match.attendance).toLocaleString()}</span></div>` : ""}
-            ${broadcast ? html`<div class="popup-row"><span class="popup-label">TV</span><span>${broadcast}</span></div>` : ""}
-            ${match.odds_details ? html`<div class="popup-row"><span class="popup-label">Odds</span><span>${match.odds_details}</span></div>` : ""}
-            ${match.over_under != null ? html`<div class="popup-row"><span class="popup-label">O/U</span><span>${match.over_under}</span></div>` : ""}
-            ${match.home_win_probability != null ? html`<div class="popup-row"><span class="popup-label">${match.home_abbrev || "Home"} win%</span><span>${parseFloat(match.home_win_probability).toFixed(0)}%</span></div>` : ""}
-            ${match.home_record ? html`<div class="popup-row"><span class="popup-label">${match.home_abbrev || "Home"}</span><span>${match.home_record}</span></div>` : ""}
-            ${match.away_record ? html`<div class="popup-row"><span class="popup-label">${match.away_abbrev || "Away"}</span><span>${match.away_record}</span></div>` : ""}
-            ${details.length ? html`
-              <div class="popup-section">Events</div>
-              ${details.slice(0, 6).map(d => html`<div class="popup-event">${d}</div>`)}
-            ` : ""}
-            ${eventUrl ? html`
-              <button class="popup-espn" @click="${(e) => { e.stopPropagation(); this._openLink(eventUrl); }}">
-                View on ESPN →
-              </button>
-            ` : ""}
-          </div>
+    const MODAL_ID = 'sl-game-popup';
+
+    const row = (label, val) => val
+      ? `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--p-border);">
+           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--p-sub);min-width:80px;flex-shrink:0;">${esc(label)}</span>
+           <span style="font-size:12px;color:var(--p-text);text-align:right;">${esc(String(val))}</span>
+         </div>`
+      : '';
+
+    const eventsHtml = details.length
+      ? `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--p-sub);margin-top:10px;margin-bottom:4px;">Events</div>
+         ${details.slice(0, 8).map(d => `<div style="font-size:11px;color:var(--p-sub);padding:2px 0;">${esc(d)}</div>`).join('')}`
+      : '';
+
+    const espnHtml = eventUrl
+      ? `<button onclick="window.open('${esc(eventUrl)}','_blank','noopener,noreferrer');document.getElementById('${MODAL_ID}').remove();"
+           style="width:100%;margin-top:12px;background:linear-gradient(135deg,${esc(homeColor)},${esc(awayColor)});color:white;border:none;cursor:pointer;font-size:12px;font-weight:800;letter-spacing:0.04em;padding:10px 16px;border-radius:10px;">
+           View on ESPN →
+         </button>`
+      : '';
+
+    const inner = `
+      <div style="background:var(--p-bg);color:var(--p-text);border-radius:20px;width:min(92vw,400px);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="background:linear-gradient(135deg,${esc(homeColor)},${esc(awayColor)});display:flex;justify-content:space-between;align-items:center;padding:12px 16px;">
+          <span style="font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(match.home_team)} vs ${esc(match.away_team)}</span>
+          <button onclick="document.getElementById('${MODAL_ID}').remove();"
+            style="flex-shrink:0;background:rgba(255,255,255,0.2);border:none;cursor:pointer;color:white;font-size:18px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;margin-left:8px;">×</button>
         </div>
-      </div>
-    `;
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow-y:auto;">
+          ${row('Status', match.status_detail)}
+          ${row('Date', match.date)}
+          ${match.venue ? row('Venue', match.venue + (match.venue_city ? `, ${match.venue_city}` : '')) : ''}
+          ${match.attendance ? row('Attendance', Number(match.attendance).toLocaleString()) : ''}
+          ${broadcast ? row('TV', broadcast) : ''}
+          ${match.odds_details ? row('Odds', match.odds_details) : ''}
+          ${match.over_under != null ? row('O/U', match.over_under) : ''}
+          ${match.home_win_probability != null ? row((match.home_abbrev || 'Home') + ' win%', parseFloat(match.home_win_probability).toFixed(0) + '%') : ''}
+          ${match.home_record ? row(match.home_abbrev || 'Home', match.home_record) : ''}
+          ${match.away_record ? row(match.away_abbrev || 'Away', match.away_record) : ''}
+          ${eventsHtml}
+          ${espnHtml}
+        </div>
+      </div>`;
+
+    const overlay = openModal(MODAL_ID, isLight, () => closeModal(MODAL_ID));
+    overlay.innerHTML = inner;
   }
 
   // ---- main render ------------------------------------------------------------
@@ -243,7 +251,7 @@ class SportsLiveGameCard extends LitElement {
       <ha-card
         class="${isLive ? "live" : isPost ? "post" : "pre"}"
         style="--hc: ${homeColor}; --ac: ${awayColor};"
-        @click="${() => { if (showPopup) { this._popupOpen = true; } else if (eventUrl) { this._openLink(eventUrl); } }}"
+        @click="${() => { if (showPopup) { this._showPopup(match, eventUrl, homeColor, awayColor); } else if (eventUrl) { this._openLink(eventUrl); } }}"
       >
         <div class="splash" aria-hidden="true"></div>
         <div class="bg-logos" aria-hidden="true">
@@ -321,7 +329,6 @@ class SportsLiveGameCard extends LitElement {
           ${showPopup ? "Tap for details · Tap logo for ESPN team page" : (eventUrl ? "Tap to view on ESPN →" : "")}
         </div>
 
-        ${this._renderPopup(match, eventUrl, homeColor, awayColor)}
       </ha-card>
     `;
   }
@@ -539,52 +546,6 @@ class SportsLiveGameCard extends LitElement {
           padding: 3px 16px 10px; letter-spacing: 0.04em; position: relative; z-index: 2;
         }
 
-        /* ── Stats popup ────────────────────────────────────────────────────── */
-        .popup-overlay {
-          position: absolute; inset: 0; z-index: 100;
-          background: var(--cl-overlay-strong);
-          display: flex; align-items: flex-end;
-          border-radius: 20px; overflow: hidden;
-        }
-        .popup {
-          width: 100%; border-radius: 20px 20px 0 0;
-          background: var(--cl-bg); overflow: hidden;
-          animation: popup-slide 0.25s cubic-bezier(0.16,1,0.3,1);
-        }
-        @keyframes popup-slide { from { transform: translateY(100%); opacity: 0; } }
-        .popup-header {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 12px 16px; font-size: 12px; font-weight: 800; color: white;
-        }
-        .popup-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .popup-close {
-          flex-shrink: 0; background: rgba(255,255,255,0.2); border: none; cursor: pointer;
-          color: white; font-size: 13px; width: 26px; height: 26px;
-          border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;
-        }
-        .popup-body {
-          padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 7px;
-          max-height: 260px; overflow-y: auto;
-        }
-        .popup-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-        .popup-label {
-          font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
-          text-transform: uppercase; color: var(--cl-text-2); min-width: 70px; flex-shrink: 0;
-        }
-        .popup-row > span:last-child { font-size: 12px; color: var(--cl-text); text-align: right; }
-        .popup-section {
-          font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-          color: var(--cl-text-2); border-top: 1px solid var(--cl-divider); padding-top: 8px; margin-top: 2px;
-        }
-        .popup-event { font-size: 11px; color: var(--cl-text-2); padding: 2px 0; }
-        .popup-espn {
-          width: 100%; margin-top: 8px;
-          background: linear-gradient(135deg, var(--hc), var(--ac));
-          color: white; border: none; cursor: pointer;
-          font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
-          padding: 10px 16px; border-radius: 10px; transition: opacity 0.2s;
-        }
-        .popup-espn:hover { opacity: 0.85; }
       `,
     ];
   }
