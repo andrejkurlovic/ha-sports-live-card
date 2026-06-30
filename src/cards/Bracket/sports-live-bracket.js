@@ -116,26 +116,50 @@ class SportsLiveBracketCard extends LitElement {
          </div>`
       : '';
 
-    const penaltyBannerHtml = decidedOnPenalties && penaltyScore
-      ? `<div style="margin-top:10px;padding:8px 14px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;text-align:center;font-size:13px;font-weight:700;color:#fbbf24;">
-           🎯 Penalty shootout: <strong>${esc(penaltyScore)}</strong>
-         </div>`
-      : (decidedOnPenalties
-          ? `<div style="margin-top:10px;padding:8px 14px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;text-align:center;font-size:13px;font-weight:700;color:#fbbf24;">🎯 Decided on penalties</div>`
-          : '');
+    // Derive per-team penalty scores from "4-3" string (winner score first)
+    let penAScore = null, penBScore = null;
+    if (penaltyScore && winner) {
+      const parts = penaltyScore.split('-').map(Number);
+      if (parts.length === 2) {
+        penAScore = (winner === a.name) ? parts[0] : parts[1];
+        penBScore = (winner === b.name) ? parts[0] : parts[1];
+      }
+    }
 
-    const penaltyDetailsHtml = penaltyDetails.length > 0
-      ? `<div style="margin-top:12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:12px 14px;">
-           <div style="font-size:10px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">🎯 Penalty Shootout</div>
-           ${penaltyDetails.map(pk => `
-             <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;">
-               <span style="font-size:15px;flex-shrink:0;">${pk.scored ? '✅' : '❌'}</span>
-               <span style="color:var(--p-sub);font-size:11px;flex:0 0 90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(pk.team || '')}</span>
-               <span style="flex:1;">${esc(pk.player || '?')}</span>
-             </div>
-           `).join('')}
-         </div>`
-      : '';
+    const isLiveShootout = (single && single.in_penalty_shootout) || (leg1 && leg1.in_penalty_shootout) || (leg2 && leg2.in_penalty_shootout);
+
+    const buildShootoutHtml = () => {
+      const showPanel = decidedOnPenalties || isLiveShootout || penaltyDetails.length > 0;
+      if (!showPanel) return '';
+      const aKicks = penaltyDetails.filter(k => k.team === a.name);
+      const bKicks = penaltyDetails.filter(k => k.team === b.name);
+      const totalSlots = Math.max(aKicks.length, bKicks.length);
+
+      const kickCircle = (kick) => {
+        if (!kick) return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(148,163,184,0.12);border:1.5px dashed rgba(148,163,184,0.25);"></div><div style="height:9px;"></div></div>`;
+        const col = kick.scored ? '#10b981' : '#ef4444';
+        const glow = kick.scored ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+        const sym = kick.scored ? '✓' : '✕';
+        const lastName = (kick.player || '').split(' ').slice(-1)[0] || '';
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="${esc(kick.player||'')}" style="width:22px;height:22px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;box-shadow:0 2px 6px ${glow};">${sym}</div><div style="font-size:7.5px;color:#94a3b8;width:30px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(kick.player||'')}">${esc(lastName)}</div></div>`;
+      };
+
+      const teamRow = (team, abbrev, logo, kicks, score, isWinner) => {
+        const slots = totalSlots > 0 ? Array.from({length: totalSlots}, (_, i) => kicks[i] || null) : [];
+        const rowStyle = isWinner
+          ? 'background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);'
+          : 'background:rgba(255,255,255,0.03);border:1px solid transparent;';
+        const scoreColor = isWinner ? '#10b981' : 'inherit';
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}">${logo ? `<img src="${esc(logo)}" onerror="this.style.display='none'" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" />` : '<div style="width:26px;"></div>'}<span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev || team.slice(0,3).toUpperCase())}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircle).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
+      };
+
+      const titleColor = isLiveShootout ? '#ef4444' : '#fbbf24';
+      const titleAnim = isLiveShootout ? 'animation:pulse 1s infinite;' : '';
+      const titleText = isLiveShootout ? '⬤ Penalty Shootout' : '🎯 Penalty Shootout';
+      return `<div style="margin-top:12px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;"><div style="font-size:10px;font-weight:800;color:${titleColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;${titleAnim}">${titleText}</div>${teamRow(a.name||'', a.abbrev||'', a.logo, aKicks, penAScore, winner === a.name)}<div style="height:5px;"></div>${teamRow(b.name||'', b.abbrev||'', b.logo, bKicks, penBScore, winner === b.name)}</div>`;
+    };
+
+    const penaltyDetailsHtml = buildShootoutHtml();
 
     const aggHtml = tie.aggregate
       ? `<div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:6px;">Aggregate: <strong>${esc(tie.aggregate)}</strong></div>`
@@ -159,7 +183,6 @@ class SportsLiveBracketCard extends LitElement {
         <div style="border-top:1px solid var(--p-border);padding-top:14px;">
           ${single ? legRow(single, '', '') : (legRow(leg1, '1st Leg', '') + legRow(leg2, '2nd Leg', ''))}
         </div>
-        ${penaltyBannerHtml}
         ${penaltyDetailsHtml}
         ${aggHtml}
         ${winnerHtml}

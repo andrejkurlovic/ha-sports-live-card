@@ -749,38 +749,42 @@ class SportsLiveMatchesCard extends LitElement {
     // Penalty shootout section
     const shootoutContainer = popupContainer.querySelector('#matches-shootout-container');
     const shootoutKicks = m.shootout_details || [];
-    if (shootoutKicks.length > 0) {
-      // Group kicks by home/away team
+    if (shootoutKicks.length > 0 || isPenDecided || isInShootout) {
+      const homeAbbrev = m.home_abbrev || m.home_team.slice(0, 3).toUpperCase();
+      const awayAbbrev = m.away_abbrev || m.away_team.slice(0, 3).toUpperCase();
       const homeKicks = shootoutKicks.filter(k => k.team === m.home_team);
       const awayKicks = shootoutKicks.filter(k => k.team === m.away_team);
-      // Build alternating display
-      const maxKicks = Math.max(homeKicks.length, awayKicks.length);
-      let kickRows = '';
-      for (let i = 0; i < maxKicks; i++) {
-        const hk = homeKicks[i];
-        const ak = awayKicks[i];
-        kickRows += `<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;">
-          <span style="text-align:right;">${hk ? esc(hk.player || '?') : ''} <span style="font-size:14px;">${hk ? (hk.scored ? '✅' : '❌') : ''}</span></span>
-          <span style="font-size:10px;color:var(--p-sub);font-weight:700;">${i + 1}</span>
-          <span><span style="font-size:14px;">${ak ? (ak.scored ? '✅' : '❌') : ''}</span> ${ak ? esc(ak.player || '?') : ''}</span>
-        </div>`;
-      }
+      const totalSlots = Math.max(homeKicks.length, awayKicks.length);
+      const penWinner = penHomeScore != null && penAwayScore != null
+        ? (penHomeScore > penAwayScore ? m.home_team : m.away_team) : null;
+
+      const kickCircle = (kick) => {
+        if (!kick) return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(148,163,184,0.12);border:1.5px dashed rgba(148,163,184,0.25);"></div><div style="height:9px;"></div></div>`;
+        const col = kick.scored ? '#10b981' : '#ef4444';
+        const glow = kick.scored ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+        const sym = kick.scored ? '✓' : '✕';
+        const lastName = (kick.player || '').split(' ').slice(-1)[0] || '';
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="${esc(kick.player||'')}" style="width:22px;height:22px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;box-shadow:0 2px 6px ${glow};">${sym}</div><div style="font-size:7.5px;color:var(--p-sub);width:30px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(kick.player||'')}">${esc(lastName)}</div></div>`;
+      };
+
+      const teamRow = (team, abbrev, logo, kicks, score, isWinner) => {
+        const slots = Array.from({length: totalSlots}, (_, i) => kicks[i] || null);
+        const rowStyle = isWinner
+          ? 'background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);'
+          : 'background:rgba(255,255,255,0.03);border:1px solid transparent;';
+        const scoreColor = isWinner ? '#10b981' : 'var(--p-text)';
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}"><img src="${esc(resolveTeamLogo(logo))}" onerror="${LOGO_ONERROR}" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" /><span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev)}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;padding-top:2px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircle).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
+      };
+
+      const titleColor = isInShootout ? '#ef4444' : '#fbbf24';
+      const titleAnim = isInShootout ? 'animation:pulse 1s infinite;' : '';
+      const titleText = isInShootout ? '⬤ Penalty Shootout' : '🎯 Penalty Shootout';
       shootoutContainer.innerHTML = `
-        <div style="margin-bottom:16px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:12px 14px;">
-          <div style="font-size:10px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">🎯 Penalty Shootout</div>
-          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;margin-bottom:8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--p-sub);">
-            <span style="text-align:right;">${esc(m.home_team)}</span>
-            <span></span>
-            <span>${esc(m.away_team)}</span>
-          </div>
-          ${kickRows}
-        </div>
-      `;
-    } else if (isPenDecided || isInShootout) {
-      // No detail data yet — show minimal banner
-      shootoutContainer.innerHTML = `
-        <div style="margin-bottom:16px;padding:10px 14px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:10px;text-align:center;font-size:12px;color:#fbbf24;font-weight:700;">
-          ${isInShootout ? '🎯 Penalty shootout in progress' : '🎯 Decided on penalties'}
+        <div style="margin-bottom:16px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;">
+          <div style="font-size:10px;font-weight:800;color:${titleColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;${titleAnim}">${titleText}</div>
+          ${teamRow(m.home_team, homeAbbrev, m.home_logo, homeKicks, penHomeScore, penWinner === m.home_team)}
+          <div style="height:5px;"></div>
+          ${teamRow(m.away_team, awayAbbrev, m.away_logo, awayKicks, penAwayScore, penWinner === m.away_team)}
         </div>
       `;
     }
