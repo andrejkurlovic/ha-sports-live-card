@@ -189,8 +189,13 @@ class SportsLiveBracketCard extends LitElement {
     overlay.innerHTML = inner;
 
     // Fetch per-kick data from ESPN if not yet in bracket attributes
-    if (decidedOnPenalties && !penaltyDetails.length && tie.espn_summary_url) {
-      fetch(tie.espn_summary_url)
+    const stateAttrs = this.hass?.states?.[this._config?.entity]?.attributes || {};
+    const leg = single || leg1 || leg2 || {};
+    const espnSummaryUrl = (decidedOnPenalties && leg.event_id && stateAttrs.competition_code && stateAttrs.sport)
+      ? `https://site.api.espn.com/apis/site/v2/sports/${stateAttrs.sport}/${stateAttrs.competition_code}/summary?event=${leg.event_id}`
+      : null;
+    if (decidedOnPenalties && !penaltyDetails.length && espnSummaryUrl) {
+      fetch(espnSummaryUrl)
         .then(r => r.json())
         .then(data => {
           const kicks = [];

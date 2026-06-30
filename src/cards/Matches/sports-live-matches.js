@@ -789,12 +789,16 @@ class SportsLiveMatchesCard extends LitElement {
       };
 
       const existingKicks = m.shootout_details || [];
+      const stateAttrs = this.hass?.states?.[this._config?.entity]?.attributes || {};
+      const espnSummaryUrl = (isPenDecided && m.event_id && stateAttrs.competition_code && stateAttrs.sport)
+        ? `https://site.api.espn.com/apis/site/v2/sports/${stateAttrs.sport}/${stateAttrs.competition_code}/summary?event=${m.event_id}`
+        : null;
       if (existingKicks.length > 0) {
         renderShootout(existingKicks);
-      } else if (m.espn_summary_url) {
+      } else if (espnSummaryUrl) {
         // Kicks not in sensor cache — fetch from ESPN public API
         shootoutContainer.innerHTML = `<div style="margin-bottom:16px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;text-align:center;font-size:12px;color:#fbbf24;font-weight:700;">🎯 Loading shootout data…</div>`;
-        fetch(m.espn_summary_url)
+        fetch(espnSummaryUrl)
           .then(r => r.json())
           .then(data => {
             const kicks = [];
