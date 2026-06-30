@@ -748,13 +748,9 @@ class SportsLiveMatchesCard extends LitElement {
 
     // Penalty shootout section
     const shootoutContainer = popupContainer.querySelector('#matches-shootout-container');
-    const shootoutKicks = m.shootout_details || [];
-    if (shootoutKicks.length > 0 || isPenDecided || isInShootout) {
+    if (isPenDecided || isInShootout) {
       const homeAbbrev = m.home_abbrev || m.home_team.slice(0, 3).toUpperCase();
       const awayAbbrev = m.away_abbrev || m.away_team.slice(0, 3).toUpperCase();
-      const homeKicks = shootoutKicks.filter(k => k.team === m.home_team);
-      const awayKicks = shootoutKicks.filter(k => k.team === m.away_team);
-      const totalSlots = Math.max(homeKicks.length, awayKicks.length);
       const penWinner = penHomeScore != null && penAwayScore != null
         ? (penHomeScore > penAwayScore ? m.home_team : m.away_team) : null;
 
@@ -767,26 +763,53 @@ class SportsLiveMatchesCard extends LitElement {
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="${esc(kick.player||'')}" style="width:22px;height:22px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;box-shadow:0 2px 6px ${glow};">${sym}</div><div style="font-size:7.5px;color:var(--p-sub);width:30px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(kick.player||'')}">${esc(lastName)}</div></div>`;
       };
 
-      const teamRow = (team, abbrev, logo, kicks, score, isWinner) => {
-        const slots = Array.from({length: totalSlots}, (_, i) => kicks[i] || null);
-        const rowStyle = isWinner
-          ? 'background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);'
-          : 'background:rgba(255,255,255,0.03);border:1px solid transparent;';
-        const scoreColor = isWinner ? '#10b981' : 'var(--p-text)';
-        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}"><img src="${esc(resolveTeamLogo(logo))}" onerror="${LOGO_ONERROR}" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" /><span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev)}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;padding-top:2px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircle).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
+      const renderShootout = (kicks) => {
+        const homeKicks = kicks.filter(k => k.team === m.home_team);
+        const awayKicks = kicks.filter(k => k.team === m.away_team);
+        const totalSlots = Math.max(homeKicks.length, awayKicks.length);
+        const teamRow = (abbrev, logo, teamKicks, score, isWinner) => {
+          const slots = Array.from({length: totalSlots}, (_, i) => teamKicks[i] || null);
+          const rowStyle = isWinner
+            ? 'background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);'
+            : 'background:rgba(255,255,255,0.03);border:1px solid transparent;';
+          const scoreColor = isWinner ? '#10b981' : 'var(--p-text)';
+          return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}"><img src="${esc(resolveTeamLogo(logo))}" onerror="${LOGO_ONERROR}" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" /><span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev)}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;padding-top:2px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircle).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
+        };
+        const titleColor = isInShootout ? '#ef4444' : '#fbbf24';
+        const titleAnim = isInShootout ? 'animation:pulse 1s infinite;' : '';
+        const titleText = isInShootout ? '⬤ Penalty Shootout' : '🎯 Penalty Shootout';
+        shootoutContainer.innerHTML = `
+          <div style="margin-bottom:16px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;">
+            <div style="font-size:10px;font-weight:800;color:${titleColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;${titleAnim}">${titleText}</div>
+            ${teamRow(homeAbbrev, m.home_logo, homeKicks, penHomeScore, penWinner === m.home_team)}
+            <div style="height:5px;"></div>
+            ${teamRow(awayAbbrev, m.away_logo, awayKicks, penAwayScore, penWinner === m.away_team)}
+          </div>
+        `;
       };
 
-      const titleColor = isInShootout ? '#ef4444' : '#fbbf24';
-      const titleAnim = isInShootout ? 'animation:pulse 1s infinite;' : '';
-      const titleText = isInShootout ? '⬤ Penalty Shootout' : '🎯 Penalty Shootout';
-      shootoutContainer.innerHTML = `
-        <div style="margin-bottom:16px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;">
-          <div style="font-size:10px;font-weight:800;color:${titleColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;${titleAnim}">${titleText}</div>
-          ${teamRow(m.home_team, homeAbbrev, m.home_logo, homeKicks, penHomeScore, penWinner === m.home_team)}
-          <div style="height:5px;"></div>
-          ${teamRow(m.away_team, awayAbbrev, m.away_logo, awayKicks, penAwayScore, penWinner === m.away_team)}
-        </div>
-      `;
+      const existingKicks = m.shootout_details || [];
+      if (existingKicks.length > 0) {
+        renderShootout(existingKicks);
+      } else if (m.espn_summary_url) {
+        // Kicks not in sensor cache — fetch from ESPN public API
+        shootoutContainer.innerHTML = `<div style="margin-bottom:16px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;text-align:center;font-size:12px;color:#fbbf24;font-weight:700;">🎯 Loading shootout data…</div>`;
+        fetch(m.espn_summary_url)
+          .then(r => r.json())
+          .then(data => {
+            const kicks = [];
+            for (const te of (data.shootout || [])) {
+              for (const shot of (te.shots || [])) {
+                kicks.push({ team: te.team, player: shot.player || '', scored: !!shot.didScore, _n: shot.shotNumber || 0 });
+              }
+            }
+            kicks.sort((a, b) => a._n - b._n);
+            renderShootout(kicks);
+          })
+          .catch(() => renderShootout([]));
+      } else {
+        renderShootout([]);
+      }
     }
 
     const eventsContainer = popupContainer.querySelector('#matches-events-container');

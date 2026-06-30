@@ -128,38 +128,35 @@ class SportsLiveBracketCard extends LitElement {
 
     const isLiveShootout = (single && single.in_penalty_shootout) || (leg1 && leg1.in_penalty_shootout) || (leg2 && leg2.in_penalty_shootout);
 
-    const buildShootoutHtml = () => {
-      const showPanel = decidedOnPenalties || isLiveShootout || penaltyDetails.length > 0;
-      if (!showPanel) return '';
-      const aKicks = penaltyDetails.filter(k => k.team === a.name);
-      const bKicks = penaltyDetails.filter(k => k.team === b.name);
+    const kickCircleBracket = (kick) => {
+      if (!kick) return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(148,163,184,0.12);border:1.5px dashed rgba(148,163,184,0.25);"></div><div style="height:9px;"></div></div>`;
+      const col = kick.scored ? '#10b981' : '#ef4444';
+      const glow = kick.scored ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+      const sym = kick.scored ? '✓' : '✕';
+      const lastName = (kick.player || '').split(' ').slice(-1)[0] || '';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="${esc(kick.player||'')}" style="width:22px;height:22px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;box-shadow:0 2px 6px ${glow};">${sym}</div><div style="font-size:7.5px;color:#94a3b8;width:30px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(kick.player||'')}">${esc(lastName)}</div></div>`;
+    };
+
+    const buildShootoutHtml = (kicks) => {
+      if (!decidedOnPenalties && !isLiveShootout) return '';
+      const aKicks = kicks.filter(k => k.team === a.name);
+      const bKicks = kicks.filter(k => k.team === b.name);
       const totalSlots = Math.max(aKicks.length, bKicks.length);
-
-      const kickCircle = (kick) => {
-        if (!kick) return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(148,163,184,0.12);border:1.5px dashed rgba(148,163,184,0.25);"></div><div style="height:9px;"></div></div>`;
-        const col = kick.scored ? '#10b981' : '#ef4444';
-        const glow = kick.scored ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
-        const sym = kick.scored ? '✓' : '✕';
-        const lastName = (kick.player || '').split(' ').slice(-1)[0] || '';
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div title="${esc(kick.player||'')}" style="width:22px;height:22px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;box-shadow:0 2px 6px ${glow};">${sym}</div><div style="font-size:7.5px;color:#94a3b8;width:30px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(kick.player||'')}">${esc(lastName)}</div></div>`;
-      };
-
-      const teamRow = (team, abbrev, logo, kicks, score, isWinner) => {
-        const slots = totalSlots > 0 ? Array.from({length: totalSlots}, (_, i) => kicks[i] || null) : [];
+      const teamRow = (name, abbrev, logo, teamKicks, score, isWinner) => {
+        const slots = totalSlots > 0 ? Array.from({length: totalSlots}, (_, i) => teamKicks[i] || null) : [];
         const rowStyle = isWinner
           ? 'background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);'
           : 'background:rgba(255,255,255,0.03);border:1px solid transparent;';
         const scoreColor = isWinner ? '#10b981' : 'inherit';
-        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}">${logo ? `<img src="${esc(logo)}" onerror="this.style.display='none'" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" />` : '<div style="width:26px;"></div>'}<span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev || team.slice(0,3).toUpperCase())}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircle).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;${rowStyle}">${logo ? `<img src="${esc(logo)}" onerror="this.style.display='none'" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin-top:3px;" />` : '<div style="width:26px;"></div>'}<span style="font-size:11px;font-weight:900;letter-spacing:0.04em;min-width:34px;padding-top:5px;">${esc(abbrev || name.slice(0,3).toUpperCase())}</span>${score != null ? `<span style="font-size:17px;font-weight:900;color:${scoreColor};min-width:22px;text-align:center;padding-top:2px;">[${score}]</span>` : '<span style="min-width:22px;"></span>'}<div style="display:flex;gap:5px;flex-wrap:wrap;">${slots.map(kickCircleBracket).join('')}</div>${isWinner ? '<span style="margin-left:auto;padding-top:2px;font-size:14px;flex-shrink:0;">🏆</span>' : ''}</div>`;
       };
-
       const titleColor = isLiveShootout ? '#ef4444' : '#fbbf24';
       const titleAnim = isLiveShootout ? 'animation:pulse 1s infinite;' : '';
       const titleText = isLiveShootout ? '⬤ Penalty Shootout' : '🎯 Penalty Shootout';
       return `<div style="margin-top:12px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:12px;padding:12px 14px;"><div style="font-size:10px;font-weight:800;color:${titleColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;${titleAnim}">${titleText}</div>${teamRow(a.name||'', a.abbrev||'', a.logo, aKicks, penAScore, winner === a.name)}<div style="height:5px;"></div>${teamRow(b.name||'', b.abbrev||'', b.logo, bKicks, penBScore, winner === b.name)}</div>`;
     };
 
-    const penaltyDetailsHtml = buildShootoutHtml();
+    const penaltyDetailsHtml = buildShootoutHtml(penaltyDetails);
 
     const aggHtml = tie.aggregate
       ? `<div style="text-align:center;font-size:12px;color:#94a3b8;margin-top:6px;">Aggregate: <strong>${esc(tie.aggregate)}</strong></div>`
@@ -183,13 +180,31 @@ class SportsLiveBracketCard extends LitElement {
         <div style="border-top:1px solid var(--p-border);padding-top:14px;">
           ${single ? legRow(single, '', '') : (legRow(leg1, '1st Leg', '') + legRow(leg2, '2nd Leg', ''))}
         </div>
-        ${penaltyDetailsHtml}
+        <div id="sl-bracket-shootout-placeholder">${penaltyDetailsHtml}</div>
         ${aggHtml}
         ${winnerHtml}
       </div>`;
 
     const overlay = openModal('sl-bracket-popup', this._isLight(), () => closeModal('sl-bracket-popup'));
     overlay.innerHTML = inner;
+
+    // Fetch per-kick data from ESPN if not yet in bracket attributes
+    if (decidedOnPenalties && !penaltyDetails.length && tie.espn_summary_url) {
+      fetch(tie.espn_summary_url)
+        .then(r => r.json())
+        .then(data => {
+          const kicks = [];
+          for (const te of (data.shootout || [])) {
+            for (const shot of (te.shots || [])) {
+              kicks.push({ team: te.team, player: shot.player || '', scored: !!shot.didScore, _n: shot.shotNumber || 0 });
+            }
+          }
+          kicks.sort((a, b) => a._n - b._n);
+          const ph = overlay.querySelector('#sl-bracket-shootout-placeholder');
+          if (ph) ph.innerHTML = buildShootoutHtml(kicks);
+        })
+        .catch(() => {});
+    }
   }
 
   _renderTie(tie) {
