@@ -72,6 +72,9 @@ class SportsLiveBracketCard extends LitElement {
     const leg1 = tie.leg1;
     const leg2 = tie.leg2;
     const winner = tie.winner_team;
+    const decidedOnPenalties = tie.decided_on_penalties || false;
+    const penaltyScore = tie.penalty_score || null;
+    const penaltyDetails = tie.penalty_details || [];
 
     const fmtDate = (iso) => {
       if (!iso) return '';
@@ -87,8 +90,9 @@ class SportsLiveBracketCard extends LitElement {
       const sB = leg.home_team === b.name ? leg.home_score : leg.away_score;
       const sAstr = sA !== null && sA !== undefined ? sA : '–';
       const sBstr = sB !== null && sB !== undefined ? sB : '–';
+      const isLiveShootout = leg.state === 'in' && leg.in_penalty_shootout;
       const stateLabel = leg.state === 'in'
-        ? `<span style="color:#ef4444;font-weight:800;">⬤ LIVE ${esc(leg.clock || '')} ${esc(leg.status_detail || '')}</span>`
+        ? `<span style="color:#ef4444;font-weight:800;">⬤ LIVE ${esc(leg.clock || '')} ${isLiveShootout ? '🎯 Penalty Shootout' : esc(leg.status_detail || '')}</span>`
         : leg.state === 'post'
           ? `<span style="color:#94a3b8;font-size:11px;">${esc(leg.status_detail || 'Full Time')}</span>`
           : `<span style="color:#94a3b8;font-size:11px;">${esc(fmtDate(leg.date))}</span>`;
@@ -97,9 +101,9 @@ class SportsLiveBracketCard extends LitElement {
         <div style="margin-bottom:12px;">
           ${labelA ? `<div style="font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">${esc(labelA)}</div>` : ''}
           <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:6px;">
-            <span style="font-weight:700;font-size:15px;flex:1;text-align:right;">${esc(a.name || 'TBD')}</span>
+            <span style="font-weight:${winner && winner === a.name ? '900' : '700'};font-size:15px;flex:1;text-align:right;color:${winner && winner === a.name ? '#10b981' : 'inherit'};">${winner && winner === a.name ? '🏆 ' : ''}${esc(a.name || 'TBD')}</span>
             <span style="font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:0.05em;background:rgba(255,255,255,0.07);padding:4px 14px;border-radius:8px;">${esc(String(sAstr))} – ${esc(String(sBstr))}</span>
-            <span style="font-weight:700;font-size:15px;flex:1;text-align:left;">${esc(b.name || 'TBD')}</span>
+            <span style="font-weight:${winner && winner === b.name ? '900' : '700'};font-size:15px;flex:1;text-align:left;color:${winner && winner === b.name ? '#10b981' : 'inherit'};">${winner && winner === b.name ? '🏆 ' : ''}${esc(b.name || 'TBD')}</span>
           </div>
           <div style="text-align:center;">${stateLabel}</div>
           ${venueHtml}
@@ -108,7 +112,28 @@ class SportsLiveBracketCard extends LitElement {
 
     const winnerHtml = winner
       ? `<div style="margin-top:14px;padding:10px 16px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;text-align:center;">
-           🏆 <strong>${esc(winner)}</strong> ${tie.tied ? '(on penalties)' : 'advances'}
+           🏆 <strong>${esc(winner)}</strong> advances${decidedOnPenalties ? ' (on penalties)' : ''}
+         </div>`
+      : '';
+
+    const penaltyBannerHtml = decidedOnPenalties && penaltyScore
+      ? `<div style="margin-top:10px;padding:8px 14px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;text-align:center;font-size:13px;font-weight:700;color:#fbbf24;">
+           🎯 Penalty shootout: <strong>${esc(penaltyScore)}</strong>
+         </div>`
+      : (decidedOnPenalties
+          ? `<div style="margin-top:10px;padding:8px 14px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;text-align:center;font-size:13px;font-weight:700;color:#fbbf24;">🎯 Decided on penalties</div>`
+          : '');
+
+    const penaltyDetailsHtml = penaltyDetails.length > 0
+      ? `<div style="margin-top:12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:12px 14px;">
+           <div style="font-size:10px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">🎯 Penalty Shootout</div>
+           ${penaltyDetails.map(pk => `
+             <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;">
+               <span style="font-size:15px;flex-shrink:0;">${pk.scored ? '✅' : '❌'}</span>
+               <span style="color:var(--p-sub);font-size:11px;flex:0 0 90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(pk.team || '')}</span>
+               <span style="flex:1;">${esc(pk.player || '?')}</span>
+             </div>
+           `).join('')}
          </div>`
       : '';
 
@@ -134,6 +159,8 @@ class SportsLiveBracketCard extends LitElement {
         <div style="border-top:1px solid var(--p-border);padding-top:14px;">
           ${single ? legRow(single, '', '') : (legRow(leg1, '1st Leg', '') + legRow(leg2, '2nd Leg', ''))}
         </div>
+        ${penaltyBannerHtml}
+        ${penaltyDetailsHtml}
         ${aggHtml}
         ${winnerHtml}
       </div>`;
@@ -151,9 +178,9 @@ class SportsLiveBracketCard extends LitElement {
     const winner = tie.winner_team;
     const isAWinner = winner && a.name && winner === a.name;
     const isBWinner = winner && b.name && winner === b.name;
+    const decidedOnPenalties = tie.decided_on_penalties || false;
+    const penaltyScore = tie.penalty_score || null;
 
-    // Per ogni leg, stabilisco le score di team_a e team_b (le squadre potrebbero essere
-    // home in leg1 e away in leg2 o viceversa)
     const scoreFor = (leg, team) => {
       if (!leg || !team || !team.name) return null;
       if (leg.home_team === team.name) return leg.home_score;
@@ -169,15 +196,28 @@ class SportsLiveBracketCard extends LitElement {
     const bSingle = scoreFor(single, b);
 
     const isLive = (leg1 && leg1.state === 'in') || (leg2 && leg2.state === 'in') || (single && single.state === 'in');
+    const isInShootout = (leg1 && leg1.in_penalty_shootout) || (leg2 && leg2.in_penalty_shootout) || (single && single.in_penalty_shootout);
     const isPending = !leg1 && !single;
+
+    // For penalty-decided ties, split the pen score per team
+    let aPenScore = null, bPenScore = null;
+    if (decidedOnPenalties && penaltyScore) {
+      const parts = penaltyScore.split('-').map(Number);
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        if (isAWinner) { aPenScore = parts[0]; bPenScore = parts[1]; }
+        else if (isBWinner) { bPenScore = parts[0]; aPenScore = parts[1]; }
+      }
+    }
 
     return html`
       <div class="tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} clickable" @click=${() => this._showTieDetail(tie)}>
         <div class="tie-row ${isAWinner ? 'winner' : ''} ${isBWinner ? 'loser' : ''}">
           <img src="${teamLogo(a.logo)}" onerror="${LOGO_ONERROR}" alt="${a.name}" />
-          <span class="tname">${a.name || 'TBD'}</span>
+          <span class="tname">${a.name || 'TBD'}${isAWinner && decidedOnPenalties ? html`<span class="pen-crown"> ✓</span>` : ''}</span>
           <span class="legs">
-            ${single ? html`<span class="leg">${this._formatScore(aSingle)}</span>` : html`
+            ${single ? html`
+              <span class="leg">${this._formatScore(aSingle)}${aPenScore !== null ? html`<span class="pen-sub">(${aPenScore}P)</span>` : ''}</span>
+            ` : html`
               <span class="leg">${this._formatScore(aL1)}</span>
               <span class="leg">${this._formatScore(aL2)}</span>
             `}
@@ -185,16 +225,19 @@ class SportsLiveBracketCard extends LitElement {
         </div>
         <div class="tie-row ${isBWinner ? 'winner' : ''} ${isAWinner ? 'loser' : ''}">
           <img src="${teamLogo(b.logo)}" onerror="${LOGO_ONERROR}" alt="${b.name}" />
-          <span class="tname">${b.name || 'TBD'}</span>
+          <span class="tname">${b.name || 'TBD'}${isBWinner && decidedOnPenalties ? html`<span class="pen-crown"> ✓</span>` : ''}</span>
           <span class="legs">
-            ${single ? html`<span class="leg">${this._formatScore(bSingle)}</span>` : html`
+            ${single ? html`
+              <span class="leg">${this._formatScore(bSingle)}${bPenScore !== null ? html`<span class="pen-sub">(${bPenScore}P)</span>` : ''}</span>
+            ` : html`
               <span class="leg">${this._formatScore(bL1)}</span>
               <span class="leg">${this._formatScore(bL2)}</span>
             `}
           </span>
         </div>
         <div class="tie-foot">
-          ${isLive ? html`<span class="live-badge"><span class="dot"></span>LIVE</span>` : ''}
+          ${isLive ? html`<span class="live-badge"><span class="dot"></span>${isInShootout ? '🎯 PEN' : 'LIVE'}</span>` : ''}
+          ${decidedOnPenalties ? html`<span class="agg pen-badge">🎯 PEN${penaltyScore ? ` ${penaltyScore}` : ''}</span>` : ''}
           ${tie.aggregate ? html`<span class="agg">${this._t('bracket.agg')} ${tie.aggregate}</span>` : ''}
           ${tie.tied ? html`<span class="agg tied">${this._t('bracket.tied_agg')}</span>` : ''}
           ${!tie.completed && !isLive && tie.first_leg_date ? html`<span class="date">${this._formatDate(tie.first_leg_date)}</span>` : ''}
@@ -230,23 +273,25 @@ class SportsLiveBracketCard extends LitElement {
     const isAW = winner && a.name && winner === a.name;
     const isBW = winner && b.name && winner === b.name;
     const isLive = (tie.leg1 && tie.leg1.state === 'in') || (tie.leg2 && tie.leg2.state === 'in') || (tie.single && tie.single.state === 'in');
+    const isInShootout = (tie.leg1 && tie.leg1.in_penalty_shootout) || (tie.leg2 && tie.leg2.in_penalty_shootout) || (tie.single && tie.single.in_penalty_shootout);
     const isPending = !tie.leg1 && !tie.single;
+    const decidedOnPenalties = tie.decided_on_penalties || false;
     const abbrA = a.abbrev || (a.name ? a.name.substring(0, 3).toUpperCase() : 'TBD');
     const abbrB = b.abbrev || (b.name ? b.name.substring(0, 3).toUpperCase() : 'TBD');
 
     return html`
-      <div class="mini-tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} ${isPending ? 'pending' : ''}" @click=${isPending ? null : () => this._showTieDetail(tie)} style="${isPending ? '' : 'cursor:pointer'}">
+      <div class="mini-tie ${isLive ? 'live' : ''} ${tie.completed ? 'done' : ''} ${isPending ? 'pending' : ''} ${decidedOnPenalties ? 'penalties' : ''}" @click=${isPending ? null : () => this._showTieDetail(tie)} style="${isPending ? '' : 'cursor:pointer'}">
         <div class="mini-team ${isAW ? 'winner' : ''} ${isBW ? 'loser' : ''}">
           ${a.logo ? html`<img src="${a.logo}" alt="${a.name}" />` : html`<div class="logo-ph"></div>`}
           <span class="abbr">${abbrA}</span>
-          <span class="agg-num">${aAgg !== null ? aAgg : '-'}</span>
+          <span class="agg-num">${aAgg !== null ? aAgg : '-'}${isAW && decidedOnPenalties ? html`<span class="mini-pen-mark">P</span>` : ''}</span>
         </div>
         <div class="mini-team ${isBW ? 'winner' : ''} ${isAW ? 'loser' : ''}">
           ${b.logo ? html`<img src="${b.logo}" alt="${b.name}" />` : html`<div class="logo-ph"></div>`}
           <span class="abbr">${abbrB}</span>
-          <span class="agg-num">${bAgg !== null ? bAgg : '-'}</span>
+          <span class="agg-num">${bAgg !== null ? bAgg : '-'}${isBW && decidedOnPenalties ? html`<span class="mini-pen-mark">P</span>` : ''}</span>
         </div>
-        ${isLive ? html`<span class="mini-live"><span class="dot"></span></span>` : ''}
+        ${isLive ? html`<span class="mini-live"><span class="dot ${isInShootout ? 'shootout' : ''}"></span></span>` : ''}
       </div>
     `;
   }
@@ -663,6 +708,23 @@ class SportsLiveBracketCard extends LitElement {
         color: var(--cl-gold);
         background: rgba(251,191,36,0.12);
       }
+      .agg.pen-badge {
+        color: var(--cl-gold);
+        background: rgba(251,191,36,0.12);
+      }
+      .pen-crown {
+        font-size: 10px;
+        color: var(--cl-green);
+        font-weight: 900;
+        margin-left: 2px;
+      }
+      .pen-sub {
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--cl-gold);
+        margin-left: 1px;
+        opacity: 0.9;
+      }
       .date {
         font-size: 10px;
         font-weight: 700;
@@ -895,6 +957,17 @@ class SportsLiveBracketCard extends LitElement {
         background: var(--cl-live);
         box-shadow: 0 0 8px var(--cl-live-glow);
         animation: dot-pulse 1.2s ease-in-out infinite;
+      }
+      .mini-live .dot.shootout {
+        background: var(--cl-gold);
+        box-shadow: 0 0 8px rgba(251,191,36,0.5);
+      }
+      .mini-pen-mark {
+        font-size: 8px;
+        font-weight: 900;
+        color: var(--cl-gold);
+        margin-left: 1px;
+        vertical-align: super;
       }
 
       /* Tree center (trophy + final) */

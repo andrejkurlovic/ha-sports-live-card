@@ -274,12 +274,27 @@ class SportsLiveMatchesCard extends LitElement {
     return match[side === 'home' ? 'home_score' : 'away_score'] ?? '-';
   }
 
+  _penaltyScore(match, side) {
+    if (!match.decided_on_penalties) return null;
+    return side === 'home' ? match.penalty_home_score : match.penalty_away_score;
+  }
+
   _isWinner(match, side) {
     if (match.state === 'pre') return null;
     const h = parseInt(match.home_score);
     const a = parseInt(match.away_score);
-    if (isNaN(h) || isNaN(a) || h === a) return null;
-    return side === 'home' ? h > a : a > h;
+    if (!isNaN(h) && !isNaN(a) && h !== a) {
+      return side === 'home' ? h > a : a > h;
+    }
+    // Scores equal — check penalty shootout result
+    if (match.decided_on_penalties &&
+        match.penalty_home_score != null &&
+        match.penalty_away_score != null) {
+      const ph = match.penalty_home_score;
+      const pa = match.penalty_away_score;
+      if (ph !== pa) return side === 'home' ? ph > pa : pa > ph;
+    }
+    return null;
   }
 
   _dayKey(match) {
@@ -580,6 +595,11 @@ class SportsLiveMatchesCard extends LitElement {
               const broadcast = this._getBroadcast(match);
               const venue = this.showVenue ? this._getVenue(match) : '';
               const isUpcoming = match.state === 'pre';
+              const isPenDecided = match.decided_on_penalties;
+              const isInShootout = match.in_penalty_shootout;
+              const homePenScore = this._penaltyScore(match, 'home');
+              const awayPenScore = this._penaltyScore(match, 'away');
+              const showExtras = (broadcast && (isUpcoming || isLive)) || venue || isPenDecided || isInShootout;
               return html`
                 <div class="match-row ${isLive ? 'live' : ''} ${recent === 'goal' ? 'goal-pulse' : ''} ${recent === 'card' ? 'card-pulse' : ''}"
                      data-match-key="${matchKey}"
@@ -591,14 +611,14 @@ class SportsLiveMatchesCard extends LitElement {
                     <div class="match-team">
                       <img src="${resolveTeamLogo(match.home_logo)}" onerror="${LOGO_ONERROR}" alt="${match.home_team}" />
                       <span class="name ${homeWinner === true ? 'winner' : (homeWinner === false ? 'loser' : '')}">${match.home_team}</span>
-                      <span class="score ${homeWinner === true ? 'winner' : (homeWinner === false ? 'loser' : '')}">${this._matchScore(match, 'home')}</span>
+                      <span class="score ${homeWinner === true ? 'winner' : (homeWinner === false ? 'loser' : '')}">${this._matchScore(match, 'home')}${homePenScore != null ? html`<span class="pen-score-inline">(${homePenScore}P)</span>` : ''}</span>
                     </div>
                     <div class="match-team">
                       <img src="${resolveTeamLogo(match.away_logo)}" onerror="${LOGO_ONERROR}" alt="${match.away_team}" />
                       <span class="name ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${match.away_team}</span>
-                      <span class="score ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${this._matchScore(match, 'away')}</span>
+                      <span class="score ${awayWinner === true ? 'winner' : (awayWinner === false ? 'loser' : '')}">${this._matchScore(match, 'away')}${awayPenScore != null ? html`<span class="pen-score-inline">(${awayPenScore}P)</span>` : ''}</span>
                     </div>
-                    ${(broadcast && (isUpcoming || isLive)) || venue ? html`
+                    ${showExtras ? html`
                       <div class="row-extras">
                         ${broadcast && (isUpcoming || isLive) ? html`
                           <span class="tv-chip" title="Watch on TV">
@@ -612,6 +632,8 @@ class SportsLiveMatchesCard extends LitElement {
                             ${venue}
                           </span>
                         ` : ''}
+                        ${isPenDecided ? html`<span class="pen-chip">🎯 Penalties</span>` : ''}
+                        ${isInShootout ? html`<span class="pen-chip live-pen">🎯 Shootout</span>` : ''}
                       </div>
                     ` : ''}
                   </div>
@@ -651,19 +673,45 @@ class SportsLiveMatchesCard extends LitElement {
     const isLight = resolveSkin(this._config) === 'light';
     const popupContainer = openModal('sports-live-matches-popup', isLight, () => { this.showPopup = false; });
 
+    const isPenDecided = m.decided_on_penalties || false;
+    const isInShootout = m.in_penalty_shootout || false;
+    const penHomeScore = m.penalty_home_score;
+    const penAwayScore = m.penalty_away_score;
+
+    // Penalty score subtitle under main scoreline
+    const penScoreHtml = isPenDecided && penHomeScore != null && penAwayScore != null
+      ? `<div style="font-size:13px;color:#fbbf24;font-weight:800;margin-top:6px;letter-spacing:0.03em;">🎯 Pens: ${esc(String(penHomeScore))} – ${esc(String(penAwayScore))}</div>`
+      : (isInShootout
+          ? `<div style="font-size:13px;color:#ef4444;font-weight:800;margin-top:6px;animation:pulse 1s infinite;">🎯 Penalty Shootout</div>`
+          : '');
+
+    // Who advances banner
+    let advancesTeam = null;
+    if (isPenDecided && penHomeScore != null && penAwayScore != null) {
+      advancesTeam = penHomeScore > penAwayScore ? m.home_team : m.away_team;
+    }
+    const advancesHtml = advancesTeam
+      ? `<div id="matches-advances-banner" style="margin-bottom:16px;padding:10px 16px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px;text-align:center;font-size:14px;font-weight:800;">
+           🏆 <strong>${esc(advancesTeam)}</strong> advances on penalties
+         </div>`
+      : '';
+
     popupContainer.innerHTML = `
       <div style="background:var(--p-bg);padding:24px;border-radius:20px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid var(--p-border);box-shadow:0 24px 64px rgba(0,0,0,0.6);margin:auto;color:var(--p-text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;">
         <h3 style="margin:0 0 20px;font-size:22px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${esc(tx('popup.match_details'))}</h3>
-        <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:12px;">
           <img style="width:64px;height:64px;object-fit:contain;" src="${esc(resolveTeamLogo(m.home_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.home_team)}" />
           <div style="text-align:center;">
             <div style="font-size:38px;font-weight:900;letter-spacing:-0.04em;line-height:1;">${esc(m.home_score ?? '-')} <span style="opacity:0.4;">-</span> ${esc(m.away_score ?? '-')}</div>
+            ${penScoreHtml}
             <div style="font-size:12px;color:var(--p-sub);margin-top:8px;font-weight:600;">${esc(m.clock ?? m.status ?? '')}</div>
           </div>
           <img style="width:64px;height:64px;object-fit:contain;" src="${esc(resolveTeamLogo(m.away_logo))}" onerror="${LOGO_ONERROR}" alt="${esc(m.away_team)}" />
         </div>
-        <p style="text-align:center;color:var(--p-muted);font-size:14px;margin:0 0 20px;"><strong>${esc(m.home_team)}</strong> vs <strong>${esc(m.away_team)}</strong></p>
+        <p style="text-align:center;color:var(--p-muted);font-size:14px;margin:0 0 16px;"><strong>${esc(m.home_team)}</strong> vs <strong>${esc(m.away_team)}</strong></p>
+        ${advancesHtml}
         <div id="matches-info-container"></div>
+        <div id="matches-shootout-container"></div>
         <div id="matches-events-container"></div>
         ${m.event_url ? `
           <button id="matches-popup-espn" style="background:var(--p-panel);color:var(--p-text);border:1px solid var(--p-border);padding:10px 20px;border-radius:12px;cursor:pointer;margin-top:8px;font-weight:700;width:100%;font-size:13px;">${esc(tx('popup.view_on_espn'))}</button>
@@ -697,6 +745,45 @@ class SportsLiveMatchesCard extends LitElement {
     infoContainer.innerHTML = infoHtml
       ? `<div style="margin-bottom:16px;">${infoHtml}</div>`
       : '';
+
+    // Penalty shootout section
+    const shootoutContainer = popupContainer.querySelector('#matches-shootout-container');
+    const shootoutKicks = m.shootout_details || [];
+    if (shootoutKicks.length > 0) {
+      // Group kicks by home/away team
+      const homeKicks = shootoutKicks.filter(k => k.team === m.home_team);
+      const awayKicks = shootoutKicks.filter(k => k.team === m.away_team);
+      // Build alternating display
+      const maxKicks = Math.max(homeKicks.length, awayKicks.length);
+      let kickRows = '';
+      for (let i = 0; i < maxKicks; i++) {
+        const hk = homeKicks[i];
+        const ak = awayKicks[i];
+        kickRows += `<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;">
+          <span style="text-align:right;">${hk ? esc(hk.player || '?') : ''} <span style="font-size:14px;">${hk ? (hk.scored ? '✅' : '❌') : ''}</span></span>
+          <span style="font-size:10px;color:var(--p-sub);font-weight:700;">${i + 1}</span>
+          <span><span style="font-size:14px;">${ak ? (ak.scored ? '✅' : '❌') : ''}</span> ${ak ? esc(ak.player || '?') : ''}</span>
+        </div>`;
+      }
+      shootoutContainer.innerHTML = `
+        <div style="margin-bottom:16px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">🎯 Penalty Shootout</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;margin-bottom:8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--p-sub);">
+            <span style="text-align:right;">${esc(m.home_team)}</span>
+            <span></span>
+            <span>${esc(m.away_team)}</span>
+          </div>
+          ${kickRows}
+        </div>
+      `;
+    } else if (isPenDecided || isInShootout) {
+      // No detail data yet — show minimal banner
+      shootoutContainer.innerHTML = `
+        <div style="margin-bottom:16px;padding:10px 14px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:10px;text-align:center;font-size:12px;color:#fbbf24;font-weight:700;">
+          ${isInShootout ? '🎯 Penalty shootout in progress' : '🎯 Decided on penalties'}
+        </div>
+      `;
+    }
 
     const eventsContainer = popupContainer.querySelector('#matches-events-container');
     const { goals, yellowCards, redCards, tries, conversions, penaltyGoals, dropGoals } = this.separateEvents(m.match_details || []);
@@ -970,6 +1057,32 @@ class SportsLiveMatchesCard extends LitElement {
         white-space: nowrap;
       }
       .venue-chip svg { width: 10px; height: 10px; flex-shrink: 0; }
+      .pen-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 7px;
+        background: rgba(251,191,36,0.12);
+        border: 1px solid rgba(251,191,36,0.3);
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+        color: #fbbf24;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .pen-chip.live-pen {
+        background: rgba(239,68,68,0.12);
+        border-color: rgba(239,68,68,0.35);
+        color: var(--cl-live);
+      }
+      .pen-score-inline {
+        font-size: 9px;
+        font-weight: 800;
+        color: #fbbf24;
+        margin-left: 2px;
+        opacity: 0.9;
+      }
       .match-status-icon {
         color: var(--cl-text-2);
         font-size: 18px;
