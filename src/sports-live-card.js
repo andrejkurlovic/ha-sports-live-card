@@ -14,3 +14,6 @@ import "./cards/Bracket/sports-live-bracket.js";
 import "./cards/Bracket/sports-live-bracket-editor.js";
 import "./cards/Game/sports-live-game-card.js";
 import "./cards/Game/sports-live-game-editor.js";
+
+import { installIdleVisibility } from "./idle-visibility.js";
+installIdleVisibility();
